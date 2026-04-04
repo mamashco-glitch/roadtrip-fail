@@ -756,6 +756,8 @@ const TRAFFIC_PLAYER_WIDTH        = 48;   // draw width for player car (px)
 const TRAFFIC_CAR_WIDTH           = 44;   // draw width for enemy cars (px)
 const TRAFFIC_PLAYER_RENDER_WIDTH = 68;
 const TRAFFIC_CAR_RENDER_WIDTH    = 58;
+const TRAFFIC_PLAYER_RENDER_WIDTH_MOBILE = 44;
+const TRAFFIC_CAR_RENDER_WIDTH_MOBILE    = 38;
 const TRAFFIC_CAR_HEIGHT_FALLBACK = 64;   // used before sprite loads
 const TRAFFIC_SCROLL_SPEED        = 4.0;  // px/frame base scroll speed
 const TRAFFIC_SPEED_MAX           = 8.6;  // px/frame speed cap — tough but readable
@@ -774,12 +776,17 @@ document.addEventListener('keyup',   e => { trafficKeys[e.key] = false; });
 
 let trafficRaf = null;
 
+function isTrafficMobile() {
+  return window.innerWidth <= 768 || ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+}
+
 function buildTrafficLanes(canvasWidth) {
   const roadLeft  = canvasWidth * TRAFFIC_ROAD_LEFT_RATIO;
   const roadRight = canvasWidth * TRAFFIC_ROAD_RIGHT_RATIO;
   const laneWidth = (roadRight - roadLeft) / TRAFFIC_LANE_COUNT;
+  const mobileInset = isTrafficMobile() ? 0 : 0;
   return Array.from({ length: TRAFFIC_LANE_COUNT }, (_, i) =>
-    roadLeft + laneWidth * i + laneWidth / 2
+    roadLeft + laneWidth * i + laneWidth / 2 + (i < TRAFFIC_LANE_COUNT / 2 ? mobileInset : -mobileInset)
   );
 }
 
@@ -1026,15 +1033,17 @@ function trafficLoop() {
   // Enemy cars
   for (const car of trafficEnemyCars) {
     const spr = trafficCarSprites[car.spriteType][car.currentFrame];
-    const renderH = spr.naturalHeight > 0 ? TRAFFIC_CAR_RENDER_WIDTH / (spr.naturalWidth / spr.naturalHeight) : car.h;
-    ctx.drawImage(spr, car.x - (TRAFFIC_CAR_RENDER_WIDTH - car.w) / 2, car.y - (renderH - car.h), TRAFFIC_CAR_RENDER_WIDTH, renderH);
+    const trafficCarRenderW = isTrafficMobile() ? TRAFFIC_CAR_RENDER_WIDTH_MOBILE : TRAFFIC_CAR_RENDER_WIDTH;
+    const renderH = spr.naturalHeight > 0 ? trafficCarRenderW / (spr.naturalWidth / spr.naturalHeight) : car.h;
+    ctx.drawImage(spr, car.x - (trafficCarRenderW - car.w) / 2, car.y - (renderH - car.h), trafficCarRenderW, renderH);
   }
 
   // Player car (drawn on top of traffic)
   const playerSpr = trafficPlayerSprites[trafficPlayer.currentFrame];
   const playerAR  = playerSpr.naturalHeight > 0 ? playerSpr.naturalWidth / playerSpr.naturalHeight : 1;
-  const playerRenderH = TRAFFIC_PLAYER_RENDER_WIDTH / playerAR;
-  ctx.drawImage(playerSpr, trafficPlayer.x - (TRAFFIC_PLAYER_RENDER_WIDTH - TRAFFIC_PLAYER_WIDTH) / 2, trafficPlayer.y - (playerRenderH - playerH), TRAFFIC_PLAYER_RENDER_WIDTH, playerRenderH);
+  const trafficPlayerRenderW = isTrafficMobile() ? TRAFFIC_PLAYER_RENDER_WIDTH_MOBILE : TRAFFIC_PLAYER_RENDER_WIDTH;
+  const playerRenderH = trafficPlayerRenderW / playerAR;
+  ctx.drawImage(playerSpr, trafficPlayer.x - (trafficPlayerRenderW - TRAFFIC_PLAYER_WIDTH) / 2, trafficPlayer.y - (playerRenderH - playerH), trafficPlayerRenderW, playerRenderH);
 
   // ── Timer HUD ───────────────────────────────────────────────────────────────
   const secsLeft  = Math.ceil((TRAFFIC_ROUND_FRAMES - trafficFrameCount) / 60);
