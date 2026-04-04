@@ -623,6 +623,10 @@ body {
   overflow: hidden;
 }
 
+.traffic-joystick {
+  display: none;
+}
+
 #traffic-canvas {
   position: absolute;
   top: 0;
@@ -676,7 +680,8 @@ body {
 }
 
 /* Virtual joystick — outer ring, bottom left */
-.snack-joystick {
+.snack-joystick,
+.traffic-joystick {
   position: fixed;
   bottom: 36px;
   left: 28px;
@@ -692,7 +697,8 @@ body {
 }
 
 /* Inner guide ring — shows the deadzone visually */
-.snack-joystick::before {
+.snack-joystick::before,
+.traffic-joystick::before {
   content: '';
   position: absolute;
   inset: 14px;
@@ -702,7 +708,8 @@ body {
 }
 
 /* Thumb nub */
-.snack-joystick-nub {
+.snack-joystick-nub,
+.traffic-joystick-nub {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -734,6 +741,59 @@ body {
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
   user-select: none;
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+  .traffic-game,
+  .snack-hunt {
+    height: 100dvh;
+  }
+
+  #traffic-canvas,
+  #snack-hunt-canvas {
+    height: 100dvh;
+  }
+
+  .traffic-game.touch-active .traffic-joystick {
+    display: block;
+  }
+
+  .snack-hunt {
+    padding-bottom: 104px;
+  }
+
+  .snack-hunt-exit-btn {
+    top: 12px;
+    font-size: 0.45rem;
+    padding: 8px 16px;
+  }
+
+  .snack-joystick,
+  .traffic-joystick {
+    bottom: 24px;
+    left: 20px;
+    width: 88px;
+    height: 88px;
+  }
+
+  .snack-joystick::before,
+  .traffic-joystick::before {
+    inset: 11px;
+  }
+
+  .snack-joystick-nub,
+  .traffic-joystick-nub {
+    width: 32px;
+    height: 32px;
+  }
+
+  .snack-hunt-fire-btn {
+    bottom: 24px;
+    right: 20px;
+    width: 76px;
+    height: 76px;
+    font-size: 0.4rem;
+  }
 }
 
 /* Status message */

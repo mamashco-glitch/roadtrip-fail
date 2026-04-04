@@ -95,9 +95,14 @@ playerSprites.right[1].src = 'player-right-2.png';
 const snackHuntBgImg = new Image();
 snackHuntBgImg.src = 'snack-hunt-bg.png';
 
+function isMobileTouchDevice() {
+  return window.innerWidth <= 768 || ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+}
+
 // --- Snack Hunt: player state ---
 const PLAYER_WIDTH        = 31;  // fixed draw width in canvas px — height derived per frame
 const PLAYER_RENDER_WIDTH = 52;
+const PLAYER_RENDER_WIDTH_MOBILE = 44;
 const WALK_FRAME_INTERVAL = 8;  // RAF frames between sprite toggles (~133ms at 60fps)
 
 const snackPlayer = {
@@ -186,6 +191,7 @@ snackSprites.burrito[0].src = 'snack-burrito-1.png';
 snackSprites.burrito[1].src = 'snack-burrito-2.png';
 
 const SNACK_WIDTHS = { chips: 70, candy: 56, burrito: 84 }; // px — height derived per sprite
+const SNACK_WIDTHS_MOBILE = { chips: 58, candy: 46, burrito: 70 };
 const SNACK_ANIM_INTERVAL = 20; // RAF ticks between frame toggles (~333ms at 60fps)
 
 const snackItems = []; // { type, x, y, vx }
@@ -211,7 +217,7 @@ let   snackHuntFramesLeft = 0;        // counts down to 0; stays at 0 when expir
 function spawnNewSnack(canvasW, canvasH) {
   const types  = ['chips', 'candy', 'burrito'];
   const type   = types[Math.floor(Math.random() * types.length)];
-  const sw     = SNACK_WIDTHS[type];
+  const sw     = getSnackWidth(type);
   const speed  = 0.8 + Math.random() * 1.2; // 0.8–2 px/frame
   const drift  = (Math.random() - 0.5) * speed * 0.6; // diagonal component
 
@@ -231,6 +237,14 @@ const DIR_VECTORS = {
   left:  { dx: -1, dy:  0 },
   right: { dx:  1, dy:  0 },
 };
+
+function getSnackPlayerRenderWidth() {
+  return isMobileTouchDevice() ? PLAYER_RENDER_WIDTH_MOBILE : PLAYER_RENDER_WIDTH;
+}
+
+function getSnackWidth(type) {
+  return (isMobileTouchDevice() ? SNACK_WIDTHS_MOBILE : SNACK_WIDTHS)[type];
+}
 
 function fireProjectile() {
   const vec  = DIR_VECTORS[snackPlayer.direction];
@@ -777,16 +791,25 @@ document.addEventListener('keyup',   e => { trafficKeys[e.key] = false; });
 let trafficRaf = null;
 
 function isTrafficMobile() {
-  return window.innerWidth <= 768 || ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  return isMobileTouchDevice();
 }
 
-function buildTrafficLanes(canvasWidth) {
-  const roadLeft  = canvasWidth * TRAFFIC_ROAD_LEFT_RATIO;
-  const roadRight = canvasWidth * TRAFFIC_ROAD_RIGHT_RATIO;
+function buildTrafficLanes(canvas) {
+  const canvasWidth = canvas.width;
+  let roadLeft  = canvasWidth * TRAFFIC_ROAD_LEFT_RATIO;
+  let roadRight = canvasWidth * TRAFFIC_ROAD_RIGHT_RATIO;
+
+  if (isTrafficMobile() && trafficBgImg.naturalWidth && trafficBgImg.naturalHeight) {
+    const trafficBgScale = Math.max(canvas.width / trafficBgImg.naturalWidth, canvas.height / trafficBgImg.naturalHeight);
+    const trafficBgDrawW = trafficBgImg.naturalWidth * trafficBgScale;
+    const trafficBgDrawX = (canvas.width - trafficBgDrawW) / 2;
+    roadLeft  = trafficBgDrawX + trafficBgDrawW * TRAFFIC_ROAD_LEFT_RATIO;
+    roadRight = trafficBgDrawX + trafficBgDrawW * TRAFFIC_ROAD_RIGHT_RATIO;
+  }
+
   const laneWidth = (roadRight - roadLeft) / TRAFFIC_LANE_COUNT;
-  const mobileInset = isTrafficMobile() ? 0 : 0;
   return Array.from({ length: TRAFFIC_LANE_COUNT }, (_, i) =>
-    roadLeft + laneWidth * i + laneWidth / 2 + (i < TRAFFIC_LANE_COUNT / 2 ? mobileInset : -mobileInset)
+    roadLeft + laneWidth * i + laneWidth / 2
   );
 }
 
@@ -814,6 +837,7 @@ function failTrafficGame() {
   miniGamePaused = false;
   debugTrafficPreview = false;
   document.getElementById('traffic-game').classList.add('hidden');
+  document.getElementById('traffic-game').classList.remove('touch-active');
   document.querySelector('.road-scene').classList.remove('paused');
   // Stuck-in-traffic penalty
   state.gas    = Math.max(0, state.gas    - 12);
@@ -862,7 +886,7 @@ function initTrafficGame() {
   canvas.width  = canvas.offsetWidth;
   canvas.height = canvas.offsetHeight;
 
-  trafficLanes = buildTrafficLanes(canvas.width);
+  trafficLanes = buildTrafficLanes(canvas);
 
   // Reset player
   const initPlayerSpr = trafficPlayerSprites[0];
@@ -1074,6 +1098,7 @@ function stopTrafficGame() {
 function showTrafficGame() {
   currentMode = 'minigame-traffic';
   clearInterval(gameInterval);
+  document.getElementById('traffic-game').classList.toggle('touch-active', isMobileTouchDevice());
   document.getElementById('traffic-game').classList.remove('hidden');
   initTrafficGame();
 }
@@ -1084,6 +1109,7 @@ function winTrafficGame() {
   miniGamePaused = false;
   debugTrafficPreview = false;
   document.getElementById('traffic-game').classList.add('hidden');
+  document.getElementById('traffic-game').classList.remove('touch-active');
   document.querySelector('.road-scene').classList.remove('paused');
   state.morale = Math.min(state.moraleMax, state.morale + 12);
   state.gas    = Math.min(100, state.gas + 6);
@@ -1099,6 +1125,7 @@ function exitTrafficGame() {
   miniGamePaused = false;
   debugTrafficPreview = false;
   document.getElementById('traffic-game').classList.add('hidden');
+  document.getElementById('traffic-game').classList.remove('touch-active');
   document.querySelector('.road-scene').classList.remove('paused');
   eventTick = 0;
   eventTickTarget = 12 + Math.floor(Math.random() * 9);
@@ -1120,21 +1147,22 @@ fireBtn.addEventListener('click', () => {
 // Nub is clamped to a 28px radius (half ring minus nub radius) so it stays inside.
 const joystickRing = document.getElementById('snack-joystick');
 const joystickNub  = document.getElementById('snack-joystick-nub');
-const JOY_RADIUS   = 55;  // half the ring's CSS width (110px)
 const JOY_DEAD     = 10;  // px from centre before input registers
-const JOY_NUB_MAX  = 28;  // max nub travel from centre (keeps nub inside ring)
+const JOY_NUB_MAX  = 22;  // max nub travel from centre (keeps nub inside ring)
 
 let joyActive  = false;
 let joyOriginX = 0;
 let joyOriginY = 0;
+let joyNubMax  = JOY_NUB_MAX;
 
 function joyStart(e) {
   e.preventDefault();
   joyActive = true;
   const touch = e.changedTouches[0];
   const rect  = joystickRing.getBoundingClientRect();
-  joyOriginX  = rect.left + JOY_RADIUS;
-  joyOriginY  = rect.top  + JOY_RADIUS;
+  joyOriginX  = rect.left + rect.width / 2;
+  joyOriginY  = rect.top  + rect.height / 2;
+  joyNubMax   = rect.width * 0.25;
   joyMove(e);
 }
 
@@ -1147,7 +1175,7 @@ function joyMove(e) {
 
   // Clamp nub visually to ring interior
   const dist   = Math.sqrt(dx * dx + dy * dy);
-  const clamp  = Math.min(dist, JOY_NUB_MAX);
+  const clamp  = Math.min(dist, joyNubMax);
   const angle  = Math.atan2(dy, dx);
   joystickNub.style.transform =
     `translate(calc(-50% + ${Math.round(clamp * Math.cos(angle))}px), ` +
@@ -1186,6 +1214,75 @@ joystickRing.addEventListener('touchstart', joyStart, { passive: false });
 joystickRing.addEventListener('touchmove',  joyMove,  { passive: false });
 joystickRing.addEventListener('touchend',   joyEnd,   { passive: false });
 joystickRing.addEventListener('touchcancel',joyEnd,   { passive: false });
+
+const trafficJoystickRing = document.getElementById('traffic-joystick');
+const trafficJoystickNub  = document.getElementById('traffic-joystick-nub');
+let trafficJoyActive      = false;
+let trafficJoyOriginX     = 0;
+let trafficJoyOriginY     = 0;
+let trafficJoyAxis        = '';
+
+function trafficJoyStart(e) {
+  if (!isMobileTouchDevice()) return;
+  e.preventDefault();
+  trafficJoyActive = true;
+  const touch = e.changedTouches[0];
+  const rect  = trafficJoystickRing.getBoundingClientRect();
+  trafficJoyOriginX = rect.left + rect.width / 2;
+  trafficJoyOriginY = rect.top  + rect.height / 2;
+  trafficJoyMove(e);
+}
+
+function trafficJoyMove(e) {
+  if (!trafficJoyActive) return;
+  e.preventDefault();
+  const touch = e.changedTouches[0];
+  let dx = touch.clientX - trafficJoyOriginX;
+  let dy = touch.clientY - trafficJoyOriginY;
+
+  const dist  = Math.sqrt(dx * dx + dy * dy);
+  const clamp = Math.min(dist, JOY_NUB_MAX);
+  const angle = Math.atan2(dy, dx);
+  trafficJoystickNub.style.transform =
+    `translate(calc(-50% + ${Math.round(clamp * Math.cos(angle))}px), ` +
+               `calc(-50% + ${Math.round(clamp * Math.sin(angle))}px))`;
+
+  trafficKeys['ArrowUp'] = false;
+  trafficKeys['ArrowDown'] = false;
+
+  if (dist <= JOY_DEAD) {
+    trafficJoyAxis = '';
+    return;
+  }
+
+  if (Math.abs(dy) >= Math.abs(dx)) {
+    trafficJoyAxis = 'vertical';
+    if (dy < 0) trafficKeys['ArrowUp'] = true;
+    else        trafficKeys['ArrowDown'] = true;
+    return;
+  }
+
+  const nextAxis = dx < 0 ? 'left' : 'right';
+  if (trafficJoyAxis !== nextAxis) {
+    trafficSwitchLane(nextAxis === 'left' ? -1 : 1);
+  }
+  trafficJoyAxis = nextAxis;
+}
+
+function trafficJoyEnd(e) {
+  if (!isMobileTouchDevice()) return;
+  e.preventDefault();
+  trafficJoyActive = false;
+  trafficJoyAxis = '';
+  trafficJoystickNub.style.transform = 'translate(-50%, -50%)';
+  trafficKeys['ArrowUp'] = false;
+  trafficKeys['ArrowDown'] = false;
+}
+
+trafficJoystickRing.addEventListener('touchstart', trafficJoyStart, { passive: false });
+trafficJoystickRing.addEventListener('touchmove',  trafficJoyMove,  { passive: false });
+trafficJoystickRing.addEventListener('touchend',   trafficJoyEnd,   { passive: false });
+trafficJoystickRing.addEventListener('touchcancel',trafficJoyEnd,   { passive: false });
 
 function initSnackHunt() {
   const canvas = document.getElementById('snack-hunt-canvas');
@@ -1317,8 +1414,9 @@ function initSnackHunt() {
 
     // Fixed width, aspect-correct height — no squishing between frames.
     // Width is always PLAYER_WIDTH; height derived from this frame's natural ratio.
-    const ow    = PLAYER_RENDER_WIDTH;
-    const oh    = Math.round(PLAYER_RENDER_WIDTH * (refSpr.naturalHeight || 240) / (refSpr.naturalWidth || 148));
+    const playerRenderWidth = getSnackPlayerRenderWidth();
+    const ow    = playerRenderWidth;
+    const oh    = Math.round(playerRenderWidth * (refSpr.naturalHeight || 240) / (refSpr.naturalWidth || 148));
     const drawX = snackPlayer.x - (ow - cw) / 2;
     const drawY = snackPlayer.y + (ch - oh); // anchor feet at bottom of ref box
 
@@ -1346,7 +1444,7 @@ function initSnackHunt() {
         const s  = snackItems[i];
         s.x += s.vx;
         s.y += s.vy;
-        const sw  = SNACK_WIDTHS[s.type];
+        const sw  = getSnackWidth(s.type);
         const spr0 = snackSprites[s.type][0];
         const sh  = spr0.naturalWidth ? Math.round(sw * spr0.naturalHeight / spr0.naturalWidth) : sw;
         // Remove when fully off any edge
@@ -1369,7 +1467,7 @@ function initSnackHunt() {
         const p = snackProjectiles[pi];
         for (let si = snackItems.length - 1; si >= 0; si--) {
           const s    = snackItems[si];
-          const sw   = SNACK_WIDTHS[s.type];
+          const sw   = getSnackWidth(s.type);
           const spr0 = snackSprites[s.type][0];
           const sh   = spr0.naturalWidth
             ? Math.round(sw * spr0.naturalHeight / spr0.naturalWidth)
@@ -1399,7 +1497,7 @@ function initSnackHunt() {
     snackItems.forEach(s => {
       const spr = snackSprites[s.type][snackAnimFrame];
       if (!spr.naturalWidth) return; // skip if not loaded yet
-      const sw = SNACK_WIDTHS[s.type];
+      const sw = getSnackWidth(s.type);
       const sh = Math.round(sw * spr.naturalHeight / spr.naturalWidth);
       ctx.drawImage(spr, Math.round(s.x - sw / 2), Math.round(s.y - sh / 2), sw, sh);
     });
