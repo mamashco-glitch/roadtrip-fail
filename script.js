@@ -191,7 +191,7 @@ snackSprites.burrito[0].src = 'snack-burrito-1.png';
 snackSprites.burrito[1].src = 'snack-burrito-2.png';
 
 const SNACK_WIDTHS = { chips: 70, candy: 56, burrito: 84 }; // px — height derived per sprite
-const SNACK_WIDTHS_MOBILE = { chips: 58, candy: 46, burrito: 70 };
+const SNACK_WIDTHS_MOBILE = { chips: 58, candy: 46, burrito: 52 };
 const SNACK_ANIM_INTERVAL = 20; // RAF ticks between frame toggles (~333ms at 60fps)
 
 const snackItems = []; // { type, x, y, vx }
@@ -1352,10 +1352,13 @@ function initSnackHunt() {
       if (joyMoveX || joyMoveY) {
         snackPlayer.x += joyMoveX * snackPlayer.speed;
         snackPlayer.y += joyMoveY * snackPlayer.speed;
-        if (joyMoveX < 0) snackPlayer.direction = 'left';
-        else if (joyMoveX > 0) snackPlayer.direction = 'right';
-        else if (joyMoveY < 0) snackPlayer.direction = 'up';
-        else if (joyMoveY > 0) snackPlayer.direction = 'down';
+        if (Math.abs(joyMoveX) > Math.abs(joyMoveY)) {
+          if (joyMoveX < 0) snackPlayer.direction = 'left';
+          else if (joyMoveX > 0) snackPlayer.direction = 'right';
+        } else {
+          if (joyMoveY < 0) snackPlayer.direction = 'up';
+          else if (joyMoveY > 0) snackPlayer.direction = 'down';
+        }
         moved = true;
       }
 
