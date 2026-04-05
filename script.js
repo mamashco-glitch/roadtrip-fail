@@ -189,14 +189,38 @@ snackSprites.candy[0].src   = 'snack-candy-1.png';
 snackSprites.candy[1].src   = 'snack-candy-2.png';
 snackSprites.burrito[0].src = 'snack-burrito-1.png';
 snackSprites.burrito[1].src = 'snack-burrito-2.png';
+const junkBossSprites = [
+  { normal: [new Image(), new Image()], hit: new Image() },
+  { normal: [new Image(), new Image()], hit: new Image() },
+  { normal: [new Image(), new Image()], hit: new Image() },
+];
+junkBossSprites[0].normal[0].src = 'junk-1-1.png';
+junkBossSprites[0].normal[1].src = 'junk-1-2.png';
+junkBossSprites[0].hit.src       = 'junk-1-hit.png';
+junkBossSprites[1].normal[0].src = 'junk-2-1.png';
+junkBossSprites[1].normal[1].src = 'junk-2-2.png';
+junkBossSprites[1].hit.src       = 'junk-2-hit.png';
+junkBossSprites[2].normal[0].src = 'junk-3-1.png';
+junkBossSprites[2].normal[1].src = 'junk-3-2.png';
+junkBossSprites[2].hit.src       = 'junk-3-hit.png';
 
 const SNACK_WIDTHS = { chips: 70, candy: 56, burrito: 84 }; // px — height derived per sprite
 const SNACK_WIDTHS_MOBILE = { chips: 58, candy: 46, burrito: 52 };
 const SNACK_ANIM_INTERVAL = 20; // RAF ticks between frame toggles (~333ms at 60fps)
+const JUNK_BOSS_HP_MAX = 3;
+const JUNK_BOSS_REWARD = 12;
+const JUNK_BOSS_RENDER_WIDTH = PLAYER_WIDTH * 3;
+const JUNK_BOSS_SPEED = 1.4 * 1.35;
+const JUNK_BOSS_HIT_FLASH_FRAMES = 8;
+const JUNK_BOSS_WANDER_INTERVAL_MIN = 24;
+const JUNK_BOSS_WANDER_INTERVAL_MAX = 52;
 
 const snackItems = []; // { type, x, y, vx }
 let snackAnimFrame = 0; // 0 or 1 — shared across all snacks
 let snackAnimTimer = 0; // counts RAF ticks since last toggle
+let junkBoss = null;
+let junkBossSpawned = false;
+let snackBossBonus = 0;
 
 const SNACK_MAX          = 2;   // max active at once
 const SNACK_RESPAWN_MIN  = 180; // ~3 s at 60fps
@@ -244,6 +268,103 @@ function getSnackPlayerRenderWidth() {
 
 function getSnackWidth(type) {
   return (isMobileTouchDevice() ? SNACK_WIDTHS_MOBILE : SNACK_WIDTHS)[type];
+}
+
+function getJunkBossStageIndex(hp) {
+  return Math.max(0, Math.min(JUNK_BOSS_HP_MAX - hp, JUNK_BOSS_HP_MAX - 1));
+}
+
+function getJunkBossDimensions(hp) {
+  const stage = junkBossSprites[getJunkBossStageIndex(hp)];
+  const refSpr = stage.normal[0];
+  const renderH = refSpr.naturalWidth
+    ? Math.round(JUNK_BOSS_RENDER_WIDTH * refSpr.naturalHeight / refSpr.naturalWidth)
+    : JUNK_BOSS_RENDER_WIDTH;
+  return { w: JUNK_BOSS_RENDER_WIDTH, h: renderH };
+}
+
+function setJunkBossWanderVelocity(boss) {
+  let dx = Math.random() * 2 - 1;
+  let dy = Math.random() * 2 - 1;
+  const len = Math.hypot(dx, dy) || 1;
+  dx /= len;
+  dy /= len;
+  boss.vx = dx * JUNK_BOSS_SPEED;
+  boss.vy = dy * JUNK_BOSS_SPEED;
+  boss.wanderTimer = JUNK_BOSS_WANDER_INTERVAL_MIN + Math.floor(Math.random() * (JUNK_BOSS_WANDER_INTERVAL_MAX - JUNK_BOSS_WANDER_INTERVAL_MIN + 1));
+}
+
+function spawnJunkBoss(canvasW, canvasH) {
+  const fromLeft = Math.random() < 0.5;
+  const dims = getJunkBossDimensions(JUNK_BOSS_HP_MAX);
+  junkBoss = {
+    x: fromLeft ? -(dims.w / 2) : canvasW + dims.w / 2,
+    y: canvasH * (0.38 + Math.random() * 0.3),
+    vx: (fromLeft ? 1 : -1) * JUNK_BOSS_SPEED,
+    vy: 0,
+    hp: JUNK_BOSS_HP_MAX,
+    mode: 'enter',
+    enterFrom: fromLeft ? 'left' : 'right',
+    escapeDir: fromLeft ? -1 : 1,
+    wanderTimer: 0,
+    hitTimer: 0,
+    hitStage: 0,
+  };
+  junkBossSpawned = true;
+}
+
+function updateJunkBoss(canvasW, canvasH, timerDone) {
+  if (!junkBoss) return;
+  const dims = getJunkBossDimensions(junkBoss.hp);
+  const halfW = dims.w / 2;
+  const halfH = dims.h / 2;
+
+  if (junkBoss.hitTimer > 0) junkBoss.hitTimer--;
+
+  if (timerDone && junkBoss.mode !== 'escape') {
+    junkBoss.mode = 'escape';
+    junkBoss.vx = junkBoss.escapeDir * JUNK_BOSS_SPEED * 1.2;
+    junkBoss.vy = 0;
+  }
+
+  if (junkBoss.mode === 'enter') {
+    junkBoss.x += junkBoss.vx;
+    if ((junkBoss.enterFrom === 'left' && junkBoss.x - halfW >= 0) ||
+        (junkBoss.enterFrom === 'right' && junkBoss.x + halfW <= canvasW)) {
+      junkBoss.mode = 'wander';
+      setJunkBossWanderVelocity(junkBoss);
+      junkBoss.x = Math.max(halfW, Math.min(canvasW - halfW, junkBoss.x));
+    }
+    return;
+  }
+
+  if (junkBoss.mode === 'escape') {
+    junkBoss.x += junkBoss.vx;
+    if (junkBoss.x + halfW < 0 || junkBoss.x - halfW > canvasW) junkBoss = null;
+    return;
+  }
+
+  junkBoss.wanderTimer--;
+  if (junkBoss.wanderTimer <= 0) setJunkBossWanderVelocity(junkBoss);
+
+  junkBoss.x += junkBoss.vx;
+  junkBoss.y += junkBoss.vy;
+
+  if (junkBoss.x - halfW < 0) {
+    junkBoss.x = halfW;
+    junkBoss.vx = Math.abs(junkBoss.vx);
+  } else if (junkBoss.x + halfW > canvasW) {
+    junkBoss.x = canvasW - halfW;
+    junkBoss.vx = -Math.abs(junkBoss.vx);
+  }
+
+  if (junkBoss.y - halfH < 0) {
+    junkBoss.y = halfH;
+    junkBoss.vy = Math.abs(junkBoss.vy);
+  } else if (junkBoss.y + halfH > canvasH) {
+    junkBoss.y = canvasH - halfH;
+    junkBoss.vy = -Math.abs(junkBoss.vy);
+  }
 }
 
 function fireProjectile() {
@@ -693,7 +814,8 @@ function exitSnackHunt() {
   // Award snacks from what the player actually hit
   const earned = snackCollected.chips   * SNACK_POINTS.chips
                + snackCollected.candy   * SNACK_POINTS.candy
-               + snackCollected.burrito * SNACK_POINTS.burrito;
+               + snackCollected.burrito * SNACK_POINTS.burrito
+               + snackBossBonus;
   state.snacks = Math.min(100, state.snacks + earned);
   if (earned > 0) {
     setStatusMsg(`+${earned} snacks from the gas station haul!`, 3000);
@@ -1301,6 +1423,9 @@ function initSnackHunt() {
   snackAnimFrame    = 0;
   snackAnimTimer    = 0;
   snackRespawnTimer = 30; // spawn first snack after half a second
+  junkBoss          = null;
+  junkBossSpawned   = false;
+  snackBossBonus    = 0;
 
   if (debugSnackPreview) {
     snackItems.push({ type: 'chips',   x: canvas.width * 0.28, y: canvas.height * 0.42, vx: 0, vy: 0 });
@@ -1325,7 +1450,12 @@ function initSnackHunt() {
     const ch = Math.round(PLAYER_WIDTH * (refSpr.naturalHeight || 240) / (refSpr.naturalWidth || 148));
     if (!miniGamePaused) {
       // ── Timer: count down, floor at 0 — no auto-exit ─────────────────────
+      const prevFramesLeft = snackHuntFramesLeft;
       if (snackHuntFramesLeft > 0) snackHuntFramesLeft--;
+      if (!junkBossSpawned && prevFramesLeft > 10 * 60 && snackHuntFramesLeft <= 10 * 60) {
+        spawnJunkBoss(canvas.width, canvas.height);
+      }
+      updateJunkBoss(canvas.width, canvas.height, snackHuntFramesLeft <= 0);
 
       // ── Movement ──────────────────────────────────────────────────────────
       let moved = false;
@@ -1464,6 +1594,22 @@ function initSnackHunt() {
       // ── Projectile–snack collision ────────────────────────────────────────
       outer: for (let pi = snackProjectiles.length - 1; pi >= 0; pi--) {
         const p = snackProjectiles[pi];
+        if (junkBoss) {
+          const dims = getJunkBossDimensions(junkBoss.hp);
+          const hit  = Math.abs(p.x - junkBoss.x) < dims.w / 2 + PROJECTILE_SIZE &&
+                       Math.abs(p.y - junkBoss.y) < dims.h / 2 + PROJECTILE_SIZE;
+          if (hit) {
+            junkBoss.hitStage = getJunkBossStageIndex(junkBoss.hp);
+            junkBoss.hitTimer = JUNK_BOSS_HIT_FLASH_FRAMES;
+            junkBoss.hp--;
+            snackProjectiles.splice(pi, 1);
+            if (junkBoss.hp <= 0) {
+              junkBoss = null;
+              snackBossBonus += JUNK_BOSS_REWARD;
+            }
+            continue outer;
+          }
+        }
         for (let si = snackItems.length - 1; si >= 0; si--) {
           const s    = snackItems[si];
           const sw   = getSnackWidth(s.type);
@@ -1500,6 +1646,17 @@ function initSnackHunt() {
       const sh = Math.round(sw * spr.naturalHeight / spr.naturalWidth);
       ctx.drawImage(spr, Math.round(s.x - sw / 2), Math.round(s.y - sh / 2), sw, sh);
     });
+    if (junkBoss) {
+      const stage = junkBossSprites[getJunkBossStageIndex(junkBoss.hp)];
+      const spr = junkBoss.hitTimer > 0 ? stage.hit : stage.normal[snackAnimFrame];
+      const dims = getJunkBossDimensions(junkBoss.hp);
+      ctx.drawImage(spr, Math.round(junkBoss.x - dims.w / 2), Math.round(junkBoss.y - dims.h / 2), dims.w, dims.h);
+      const hpBarY = Math.round(junkBoss.y - dims.h / 2 - 12);
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.fillRect(Math.round(junkBoss.x - dims.w / 2), hpBarY, dims.w, 6);
+      ctx.fillStyle = junkBoss.hp === 3 ? '#3ddc84' : junkBoss.hp === 2 ? '#ff9f1c' : '#ff4444';
+      ctx.fillRect(Math.round(junkBoss.x - dims.w / 2), hpBarY, Math.round(dims.w * (junkBoss.hp / JUNK_BOSS_HP_MAX)), 6);
+    }
 
     // ── Score / Timer HUD ─────────────────────────────────────────────────
     const totalSnacks  = snackCollected.chips   * SNACK_POINTS.chips
@@ -1535,6 +1692,9 @@ function stopSnackHunt() {
   if (snackHuntRaf) { cancelAnimationFrame(snackHuntRaf); snackHuntRaf = null; }
   snackProjectiles.length = 0;
   snackItems.length       = 0;
+  junkBoss = null;
+  junkBossSpawned = false;
+  snackBossBonus = 0;
   for (const k in snackKeys) delete snackKeys[k];
   // Reset joystick visual and state
   joyActive = false;
