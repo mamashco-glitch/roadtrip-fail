@@ -1239,11 +1239,13 @@ function trafficForwardEnd(e) {
   trafficKeys['ArrowUp'] = false;
 }
 
-trafficLeftBtn.addEventListener('touchstart', trafficButtonLane(-1), { passive: false });
-trafficRightBtn.addEventListener('touchstart', trafficButtonLane(1), { passive: false });
-trafficForwardBtn.addEventListener('touchstart', trafficForwardStart, { passive: false });
-trafficForwardBtn.addEventListener('touchend', trafficForwardEnd, { passive: false });
-trafficForwardBtn.addEventListener('touchcancel', trafficForwardEnd, { passive: false });
+if (trafficLeftBtn && trafficForwardBtn && trafficRightBtn) {
+  trafficLeftBtn.addEventListener('touchstart', trafficButtonLane(-1), { passive: false });
+  trafficRightBtn.addEventListener('touchstart', trafficButtonLane(1), { passive: false });
+  trafficForwardBtn.addEventListener('touchstart', trafficForwardStart, { passive: false });
+  trafficForwardBtn.addEventListener('touchend', trafficForwardEnd, { passive: false });
+  trafficForwardBtn.addEventListener('touchcancel', trafficForwardEnd, { passive: false });
+}
 
 function initSnackHunt() {
   const canvas = document.getElementById('snack-hunt-canvas');
@@ -1694,18 +1696,25 @@ function startDriving() {
 }
 
 // --- Button wiring ---
-document.getElementById('btn-drive').addEventListener('click', () => showScreen('screen-name'));
-document.getElementById('btn-hit-road').addEventListener('click', startDriving);
+function bindPress(el, handler) {
+  el.addEventListener('click', handler);
+  el.addEventListener('touchstart', e => {
+    e.preventDefault();
+    handler(e);
+  }, { passive: false });
+}
 
-document.getElementById('btn-start').addEventListener('click', () => {
+bindPress(document.getElementById('btn-drive'), () => showScreen('screen-name'));
+bindPress(document.getElementById('btn-hit-road'), startDriving);
+bindPress(document.getElementById('btn-start'), () => {
   resetShop();
   showScreen('screen-shop');
 });
-document.getElementById('btn-how').addEventListener('click', () => showScreen('screen-how'));
-document.getElementById('btn-credits').addEventListener('click', () => showScreen('screen-credits'));
+bindPress(document.getElementById('btn-how'), () => showScreen('screen-how'));
+bindPress(document.getElementById('btn-credits'), () => showScreen('screen-credits'));
 
 document.querySelectorAll('.back-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+  bindPress(btn, () => {
     if (gameInterval) { clearInterval(gameInterval); gameInterval = null; }
     eventTick = 0;
     document.getElementById('event-box').classList.add('hidden');
