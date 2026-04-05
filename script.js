@@ -819,6 +819,10 @@ function showSnackHunt() {
 }
 
 function exitSnackHunt() {
+  const earned = snackCollected.chips   * SNACK_POINTS.chips
+               + snackCollected.candy   * SNACK_POINTS.candy
+               + snackCollected.burrito * SNACK_POINTS.burrito
+               + snackBossBonus;
   resetSnackInput();
   stopSnackHunt();
   currentMode = 'driving';
@@ -828,10 +832,6 @@ function exitSnackHunt() {
   document.querySelector('.road-scene').classList.remove('paused');
 
   // Award snacks from what the player actually hit
-  const earned = snackCollected.chips   * SNACK_POINTS.chips
-               + snackCollected.candy   * SNACK_POINTS.candy
-               + snackCollected.burrito * SNACK_POINTS.burrito
-               + snackBossBonus;
   state.snacks = Math.min(100, state.snacks + earned);
   if (earned > 0) {
     setStatusMsg(`+${earned} snacks from the gas station haul!`, 3000);
