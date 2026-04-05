@@ -283,6 +283,10 @@ function getJunkBossDimensions(hp) {
   return { w: JUNK_BOSS_RENDER_WIDTH, h: renderH };
 }
 
+function isFiniteJunkBossValue(value) {
+  return Number.isFinite(value);
+}
+
 function setJunkBossWanderVelocity(boss) {
   let dx = Math.random() * 2 - 1;
   let dy = Math.random() * 2 - 1;
@@ -295,26 +299,38 @@ function setJunkBossWanderVelocity(boss) {
 }
 
 function spawnJunkBoss(canvasW, canvasH) {
-  const fromLeft = Math.random() < 0.5;
-  const dims = getJunkBossDimensions(JUNK_BOSS_HP_MAX);
-  junkBoss = {
-    x: fromLeft ? -(dims.w / 2) : canvasW + dims.w / 2,
-    y: canvasH * (0.38 + Math.random() * 0.3),
-    vx: (fromLeft ? 1 : -1) * JUNK_BOSS_SPEED,
-    vy: 0,
-    hp: JUNK_BOSS_HP_MAX,
-    mode: 'enter',
-    enterFrom: fromLeft ? 'left' : 'right',
-    escapeDir: fromLeft ? -1 : 1,
-    wanderTimer: 0,
-    hitTimer: 0,
-    hitStage: 0,
-  };
-  junkBossSpawned = true;
+  try {
+    const fromLeft = Math.random() < 0.5;
+    const dims = getJunkBossDimensions(JUNK_BOSS_HP_MAX);
+    junkBoss = {
+      x: fromLeft ? -(dims.w / 2) : canvasW + dims.w / 2,
+      y: canvasH * (0.38 + Math.random() * 0.3),
+      vx: (fromLeft ? 1 : -1) * JUNK_BOSS_SPEED,
+      vy: 0,
+      hp: JUNK_BOSS_HP_MAX,
+      mode: 'enter',
+      enterFrom: fromLeft ? 'left' : 'right',
+      escapeDir: fromLeft ? -1 : 1,
+      wanderTimer: 0,
+      hitTimer: 0,
+      hitStage: 0,
+    };
+    junkBossSpawned = true;
+  } catch (err) {
+    console.warn('Snack Hunt boss spawn failed', err);
+    junkBoss = null;
+    junkBossSpawned = true;
+  }
 }
 
 function updateJunkBoss(canvasW, canvasH, timerDone) {
   if (!junkBoss) return;
+  if (!isFiniteJunkBossValue(junkBoss.x) || !isFiniteJunkBossValue(junkBoss.y) ||
+      !isFiniteJunkBossValue(junkBoss.vx) || !isFiniteJunkBossValue(junkBoss.vy)) {
+    console.warn('Snack Hunt boss had invalid state', junkBoss);
+    junkBoss = null;
+    return;
+  }
   const dims = getJunkBossDimensions(junkBoss.hp);
   const halfW = dims.w / 2;
   const halfH = dims.h / 2;
@@ -1596,6 +1612,7 @@ function initSnackHunt() {
         const p = snackProjectiles[pi];
         if (junkBoss) {
           const dims = getJunkBossDimensions(junkBoss.hp);
+          if (!isFiniteJunkBossValue(dims.w) || !isFiniteJunkBossValue(dims.h)) continue outer;
           const hit  = Math.abs(p.x - junkBoss.x) < dims.w / 2 + PROJECTILE_SIZE &&
                        Math.abs(p.y - junkBoss.y) < dims.h / 2 + PROJECTILE_SIZE;
           if (hit) {
@@ -1650,12 +1667,17 @@ function initSnackHunt() {
       const stage = junkBossSprites[getJunkBossStageIndex(junkBoss.hp)];
       const spr = junkBoss.hitTimer > 0 ? stage.hit : stage.normal[snackAnimFrame];
       const dims = getJunkBossDimensions(junkBoss.hp);
-      ctx.drawImage(spr, Math.round(junkBoss.x - dims.w / 2), Math.round(junkBoss.y - dims.h / 2), dims.w, dims.h);
-      const hpBarY = Math.round(junkBoss.y - dims.h / 2 - 12);
-      ctx.fillStyle = 'rgba(0,0,0,0.75)';
-      ctx.fillRect(Math.round(junkBoss.x - dims.w / 2), hpBarY, dims.w, 6);
-      ctx.fillStyle = junkBoss.hp === 3 ? '#3ddc84' : junkBoss.hp === 2 ? '#ff9f1c' : '#ff4444';
-      ctx.fillRect(Math.round(junkBoss.x - dims.w / 2), hpBarY, Math.round(dims.w * (junkBoss.hp / JUNK_BOSS_HP_MAX)), 6);
+      if (!spr || !spr.naturalWidth || !isFiniteJunkBossValue(junkBoss.x) || !isFiniteJunkBossValue(junkBoss.y) ||
+          !isFiniteJunkBossValue(dims.w) || !isFiniteJunkBossValue(dims.h)) {
+        console.warn('Snack Hunt boss frame unavailable', { hp: junkBoss.hp, hitTimer: junkBoss.hitTimer });
+      } else {
+        ctx.drawImage(spr, Math.round(junkBoss.x - dims.w / 2), Math.round(junkBoss.y - dims.h / 2), dims.w, dims.h);
+        const hpBarY = Math.round(junkBoss.y - dims.h / 2 - 12);
+        ctx.fillStyle = 'rgba(0,0,0,0.75)';
+        ctx.fillRect(Math.round(junkBoss.x - dims.w / 2), hpBarY, dims.w, 6);
+        ctx.fillStyle = junkBoss.hp === 3 ? '#3ddc84' : junkBoss.hp === 2 ? '#ff9f1c' : '#ff4444';
+        ctx.fillRect(Math.round(junkBoss.x - dims.w / 2), hpBarY, Math.round(dims.w * (junkBoss.hp / JUNK_BOSS_HP_MAX)), 6);
+      }
     }
 
     // ── Score / Timer HUD ─────────────────────────────────────────────────
