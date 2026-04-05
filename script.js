@@ -682,6 +682,7 @@ function showSnackHunt() {
 }
 
 function exitSnackHunt() {
+  resetSnackInput();
   stopSnackHunt();
   currentMode = 'driving';
   miniGamePaused = false;
@@ -1155,8 +1156,29 @@ let joyOriginX = 0;
 let joyOriginY = 0;
 let joyNubMax  = JOY_NUB_MAX;
 
+function resetSnackInput() {
+  joyActive = false;
+  joyOriginX = 0;
+  joyOriginY = 0;
+  joyNubMax = JOY_NUB_MAX;
+  joystickNub.style.transform = 'translate(-50%, -50%)';
+  snackKeys['ArrowUp']    = false;
+  snackKeys['ArrowDown']  = false;
+  snackKeys['ArrowLeft']  = false;
+  snackKeys['ArrowRight'] = false;
+  snackKeys['w'] = false;
+  snackKeys['a'] = false;
+  snackKeys['s'] = false;
+  snackKeys['d'] = false;
+  snackKeys['W'] = false;
+  snackKeys['A'] = false;
+  snackKeys['S'] = false;
+  snackKeys['D'] = false;
+}
+
 function joyStart(e) {
   e.preventDefault();
+  resetSnackInput();
   joyActive = true;
   const touch = e.changedTouches[0];
   const rect  = joystickRing.getBoundingClientRect();
@@ -1167,8 +1189,8 @@ function joyStart(e) {
 }
 
 function joyMove(e) {
-  e.preventDefault();
   if (!joyActive) return;
+  e.preventDefault();
   const touch = e.changedTouches[0];
   let dx = touch.clientX - joyOriginX;
   let dy = touch.clientY - joyOriginY;
@@ -1201,19 +1223,17 @@ function joyMove(e) {
 
 function joyEnd(e) {
   e.preventDefault();
-  joyActive = false;
-  // Centre the nub and release all directions
-  joystickNub.style.transform = 'translate(-50%, -50%)';
-  snackKeys['ArrowUp']    = false;
-  snackKeys['ArrowDown']  = false;
-  snackKeys['ArrowLeft']  = false;
-  snackKeys['ArrowRight'] = false;
+  resetSnackInput();
 }
 
 joystickRing.addEventListener('touchstart', joyStart, { passive: false });
 joystickRing.addEventListener('touchmove',  joyMove,  { passive: false });
 joystickRing.addEventListener('touchend',   joyEnd,   { passive: false });
 joystickRing.addEventListener('touchcancel',joyEnd,   { passive: false });
+window.addEventListener('blur', resetSnackInput);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) resetSnackInput();
+});
 
 const trafficLeftBtn    = document.getElementById('traffic-left-btn');
 const trafficForwardBtn = document.getElementById('traffic-forward-btn');
@@ -1250,6 +1270,7 @@ if (trafficLeftBtn && trafficForwardBtn && trafficRightBtn) {
 function initSnackHunt() {
   const canvas = document.getElementById('snack-hunt-canvas');
   const ctx    = canvas.getContext('2d');
+  resetSnackInput();
 
   // Use offsetWidth/Height — not window.innerWidth/Height — so canvas resolution
   // matches its actual rendered CSS size. On mobile, window.innerHeight includes
