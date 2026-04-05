@@ -207,13 +207,13 @@ junkBossSprites[2].hit.src       = 'junk-3-hit.png';
 const SNACK_WIDTHS = { chips: 70, candy: 56, burrito: 84 }; // px — height derived per sprite
 const SNACK_WIDTHS_MOBILE = { chips: 58, candy: 46, burrito: 52 };
 const SNACK_ANIM_INTERVAL = 20; // RAF ticks between frame toggles (~333ms at 60fps)
-const JUNK_BOSS_HP_MAX = 3;
+const JUNK_BOSS_HP_MAX = 9;
 const JUNK_BOSS_REWARD = 12;
-const JUNK_BOSS_RENDER_WIDTH = PLAYER_WIDTH * 3;
+const JUNK_BOSS_RENDER_WIDTH = isMobileTouchDevice() ? PLAYER_WIDTH * 3 : PLAYER_WIDTH * 6;
 const JUNK_BOSS_SPEED = 1.4 * 1.35;
 const JUNK_BOSS_HIT_FLASH_FRAMES = 8;
-const JUNK_BOSS_WANDER_INTERVAL_MIN = 24;
-const JUNK_BOSS_WANDER_INTERVAL_MAX = 52;
+const JUNK_BOSS_WANDER_INTERVAL_MIN = 52;
+const JUNK_BOSS_WANDER_INTERVAL_MAX = 104;
 
 const snackItems = []; // { type, x, y, vx }
 let snackAnimFrame = 0; // 0 or 1 — shared across all snacks
@@ -271,7 +271,7 @@ function getSnackWidth(type) {
 }
 
 function getJunkBossStageIndex(hp) {
-  return Math.max(0, Math.min(JUNK_BOSS_HP_MAX - hp, JUNK_BOSS_HP_MAX - 1));
+  return Math.max(0, Math.min(2, Math.floor((JUNK_BOSS_HP_MAX - hp) / 3)));
 }
 
 function getJunkBossDimensions(hp) {
@@ -1675,7 +1675,7 @@ function initSnackHunt() {
         const hpBarY = Math.round(junkBoss.y - dims.h / 2 - 12);
         ctx.fillStyle = 'rgba(0,0,0,0.75)';
         ctx.fillRect(Math.round(junkBoss.x - dims.w / 2), hpBarY, dims.w, 6);
-        ctx.fillStyle = junkBoss.hp === 3 ? '#3ddc84' : junkBoss.hp === 2 ? '#ff9f1c' : '#ff4444';
+        ctx.fillStyle = junkBoss.hp >= 7 ? '#3ddc84' : junkBoss.hp >= 4 ? '#ff9f1c' : '#ff4444';
         ctx.fillRect(Math.round(junkBoss.x - dims.w / 2), hpBarY, Math.round(dims.w * (junkBoss.hp / JUNK_BOSS_HP_MAX)), 6);
       }
     }
