@@ -782,7 +782,7 @@ body {
   }
 
   .snack-hunt {
-    padding-bottom: 104px;
+    padding-bottom: 128px;
   }
 
   .snack-hunt-exit-btn {
@@ -792,19 +792,19 @@ body {
   }
 
   .snack-joystick {
-    bottom: 24px;
-    left: 20px;
-    width: 88px;
-    height: 88px;
+    bottom: 28px;
+    left: 24px;
+    width: 120px;
+    height: 120px;
   }
 
   .snack-joystick::before {
-    inset: 11px;
+    inset: 15px;
   }
 
   .snack-joystick-nub {
-    width: 32px;
-    height: 32px;
+    width: 42px;
+    height: 42px;
   }
 
   .traffic-controls {
@@ -819,11 +819,11 @@ body {
   }
 
   .snack-hunt-fire-btn {
-    bottom: 24px;
-    right: 20px;
-    width: 76px;
-    height: 76px;
-    font-size: 0.4rem;
+    bottom: 28px;
+    right: 24px;
+    width: 104px;
+    height: 104px;
+    font-size: 0.46rem;
   }
 }
 

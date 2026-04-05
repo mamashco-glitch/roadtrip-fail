@@ -1155,12 +1155,16 @@ let joyActive  = false;
 let joyOriginX = 0;
 let joyOriginY = 0;
 let joyNubMax  = JOY_NUB_MAX;
+let joyMoveX   = 0;
+let joyMoveY   = 0;
 
 function resetSnackInput() {
   joyActive = false;
   joyOriginX = 0;
   joyOriginY = 0;
   joyNubMax = JOY_NUB_MAX;
+  joyMoveX = 0;
+  joyMoveY = 0;
   joystickNub.style.transform = 'translate(-50%, -50%)';
   snackKeys['ArrowUp']    = false;
   snackKeys['ArrowDown']  = false;
@@ -1210,14 +1214,13 @@ function joyMove(e) {
   snackKeys['ArrowRight'] = false;
 
   if (dist > JOY_DEAD) {
-    // Pick the dominant axis — up/down win ties
-    if (Math.abs(dy) >= Math.abs(dx)) {
-      if (dy < 0) snackKeys['ArrowUp']   = true;
-      else        snackKeys['ArrowDown']  = true;
-    } else {
-      if (dx < 0) snackKeys['ArrowLeft']  = true;
-      else        snackKeys['ArrowRight'] = true;
+    const len = Math.hypot(dx, dy);
+    if (len > 0) {
+      dx /= len;
+      dy /= len;
     }
+    joyMoveX = dx;
+    joyMoveY = dy;
   }
 }
 
@@ -1344,6 +1347,15 @@ function initSnackHunt() {
       if (snackKeys['ArrowRight'] || snackKeys['d'] || snackKeys['D']) {
         snackPlayer.x         += snackPlayer.speed;
         snackPlayer.direction  = 'right';
+        moved = true;
+      }
+      if (joyMoveX || joyMoveY) {
+        snackPlayer.x += joyMoveX * snackPlayer.speed;
+        snackPlayer.y += joyMoveY * snackPlayer.speed;
+        if (joyMoveX < 0) snackPlayer.direction = 'left';
+        else if (joyMoveX > 0) snackPlayer.direction = 'right';
+        else if (joyMoveY < 0) snackPlayer.direction = 'up';
+        else if (joyMoveY > 0) snackPlayer.direction = 'down';
         moved = true;
       }
 
