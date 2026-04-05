@@ -102,7 +102,7 @@ function isMobileTouchDevice() {
 // --- Snack Hunt: player state ---
 const PLAYER_WIDTH        = 31;  // fixed draw width in canvas px — height derived per frame
 const PLAYER_RENDER_WIDTH = 52;
-const PLAYER_RENDER_WIDTH_MOBILE = 44;
+const PLAYER_RENDER_WIDTH_MOBILE = 25;
 const WALK_FRAME_INTERVAL = 8;  // RAF frames between sprite toggles (~133ms at 60fps)
 
 const snackPlayer = {
@@ -1215,74 +1215,35 @@ joystickRing.addEventListener('touchmove',  joyMove,  { passive: false });
 joystickRing.addEventListener('touchend',   joyEnd,   { passive: false });
 joystickRing.addEventListener('touchcancel',joyEnd,   { passive: false });
 
-const trafficJoystickRing = document.getElementById('traffic-joystick');
-const trafficJoystickNub  = document.getElementById('traffic-joystick-nub');
-let trafficJoyActive      = false;
-let trafficJoyOriginX     = 0;
-let trafficJoyOriginY     = 0;
-let trafficJoyAxis        = '';
+const trafficLeftBtn    = document.getElementById('traffic-left-btn');
+const trafficForwardBtn = document.getElementById('traffic-forward-btn');
+const trafficRightBtn   = document.getElementById('traffic-right-btn');
 
-function trafficJoyStart(e) {
+function trafficButtonLane(dir) {
+  return e => {
+    if (!isMobileTouchDevice()) return;
+    e.preventDefault();
+    if (currentMode === 'minigame-traffic') trafficSwitchLane(dir);
+  };
+}
+
+function trafficForwardStart(e) {
   if (!isMobileTouchDevice()) return;
   e.preventDefault();
-  trafficJoyActive = true;
-  const touch = e.changedTouches[0];
-  const rect  = trafficJoystickRing.getBoundingClientRect();
-  trafficJoyOriginX = rect.left + rect.width / 2;
-  trafficJoyOriginY = rect.top  + rect.height / 2;
-  trafficJoyMove(e);
+  if (currentMode === 'minigame-traffic') trafficKeys['ArrowUp'] = true;
 }
 
-function trafficJoyMove(e) {
-  if (!trafficJoyActive) return;
-  e.preventDefault();
-  const touch = e.changedTouches[0];
-  let dx = touch.clientX - trafficJoyOriginX;
-  let dy = touch.clientY - trafficJoyOriginY;
-
-  const dist  = Math.sqrt(dx * dx + dy * dy);
-  const clamp = Math.min(dist, JOY_NUB_MAX);
-  const angle = Math.atan2(dy, dx);
-  trafficJoystickNub.style.transform =
-    `translate(calc(-50% + ${Math.round(clamp * Math.cos(angle))}px), ` +
-               `calc(-50% + ${Math.round(clamp * Math.sin(angle))}px))`;
-
-  trafficKeys['ArrowUp'] = false;
-  trafficKeys['ArrowDown'] = false;
-
-  if (dist <= JOY_DEAD) {
-    trafficJoyAxis = '';
-    return;
-  }
-
-  if (Math.abs(dy) >= Math.abs(dx)) {
-    trafficJoyAxis = 'vertical';
-    if (dy < 0) trafficKeys['ArrowUp'] = true;
-    else        trafficKeys['ArrowDown'] = true;
-    return;
-  }
-
-  const nextAxis = dx < 0 ? 'left' : 'right';
-  if (trafficJoyAxis !== nextAxis) {
-    trafficSwitchLane(nextAxis === 'left' ? -1 : 1);
-  }
-  trafficJoyAxis = nextAxis;
-}
-
-function trafficJoyEnd(e) {
+function trafficForwardEnd(e) {
   if (!isMobileTouchDevice()) return;
   e.preventDefault();
-  trafficJoyActive = false;
-  trafficJoyAxis = '';
-  trafficJoystickNub.style.transform = 'translate(-50%, -50%)';
   trafficKeys['ArrowUp'] = false;
-  trafficKeys['ArrowDown'] = false;
 }
 
-trafficJoystickRing.addEventListener('touchstart', trafficJoyStart, { passive: false });
-trafficJoystickRing.addEventListener('touchmove',  trafficJoyMove,  { passive: false });
-trafficJoystickRing.addEventListener('touchend',   trafficJoyEnd,   { passive: false });
-trafficJoystickRing.addEventListener('touchcancel',trafficJoyEnd,   { passive: false });
+trafficLeftBtn.addEventListener('touchstart', trafficButtonLane(-1), { passive: false });
+trafficRightBtn.addEventListener('touchstart', trafficButtonLane(1), { passive: false });
+trafficForwardBtn.addEventListener('touchstart', trafficForwardStart, { passive: false });
+trafficForwardBtn.addEventListener('touchend', trafficForwardEnd, { passive: false });
+trafficForwardBtn.addEventListener('touchcancel', trafficForwardEnd, { passive: false });
 
 function initSnackHunt() {
   const canvas = document.getElementById('snack-hunt-canvas');

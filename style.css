@@ -623,7 +623,7 @@ body {
   overflow: hidden;
 }
 
-.traffic-joystick {
+.traffic-controls {
   display: none;
 }
 
@@ -680,8 +680,7 @@ body {
 }
 
 /* Virtual joystick — outer ring, bottom left */
-.snack-joystick,
-.traffic-joystick {
+.snack-joystick {
   position: fixed;
   bottom: 36px;
   left: 28px;
@@ -697,8 +696,7 @@ body {
 }
 
 /* Inner guide ring — shows the deadzone visually */
-.snack-joystick::before,
-.traffic-joystick::before {
+.snack-joystick::before {
   content: '';
   position: absolute;
   inset: 14px;
@@ -708,8 +706,7 @@ body {
 }
 
 /* Thumb nub */
-.snack-joystick-nub,
-.traffic-joystick-nub {
+.snack-joystick-nub {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -743,6 +740,32 @@ body {
   user-select: none;
 }
 
+.traffic-controls {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  gap: 10px;
+  align-items: center;
+}
+
+.traffic-control-btn {
+  min-width: 76px;
+  height: 54px;
+  padding: 0 12px;
+  border: 3px solid #f5c518;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #f5c518;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  letter-spacing: 1px;
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 @media (max-width: 768px), (pointer: coarse) {
   .traffic-game,
   .snack-hunt {
@@ -754,8 +777,8 @@ body {
     height: 100dvh;
   }
 
-  .traffic-game.touch-active .traffic-joystick {
-    display: block;
+  .traffic-game.touch-active .traffic-controls {
+    display: flex;
   }
 
   .snack-hunt {
@@ -768,23 +791,31 @@ body {
     padding: 8px 16px;
   }
 
-  .snack-joystick,
-  .traffic-joystick {
+  .snack-joystick {
     bottom: 24px;
     left: 20px;
     width: 88px;
     height: 88px;
   }
 
-  .snack-joystick::before,
-  .traffic-joystick::before {
+  .snack-joystick::before {
     inset: 11px;
   }
 
-  .snack-joystick-nub,
-  .traffic-joystick-nub {
+  .snack-joystick-nub {
     width: 32px;
     height: 32px;
+  }
+
+  .traffic-controls {
+    bottom: 20px;
+    gap: 8px;
+  }
+
+  .traffic-control-btn {
+    min-width: 68px;
+    height: 48px;
+    font-size: 0.36rem;
   }
 
   .snack-hunt-fire-btn {
