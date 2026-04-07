@@ -115,6 +115,7 @@ const audio = {
   sfxGain: null,
   compressor: null,
   noiseBuffer: null,
+  primed: false,
   currentTrack: '',
   currentStep: 0,
   musicTimer: null,
@@ -171,7 +172,29 @@ const audio = {
     const ctx = this.ensureContext();
     if (!ctx) return;
     this.unlocked = true;
+    this.prime();
     this.resumeIfNeeded('unlock');
+  },
+
+  prime() {
+    const ctx = this.ensureContext();
+    if (!ctx || this.primed === true) return;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      gain.gain.value = 0.00001;
+      osc.frequency.value = 220;
+      osc.type = 'sine';
+      osc.connect(gain);
+      gain.connect(this.masterGain || ctx.destination);
+      const now = ctx.currentTime;
+      osc.start(now);
+      osc.stop(now + 0.02);
+      this.primed = true;
+      this.log('Audio graph primed');
+    } catch (err) {
+      this.log('Prime failed', err);
+    }
   },
 
   resumeIfNeeded(reason = 'resume') {
@@ -183,12 +206,17 @@ const audio = {
       ctx.resume()
         .then(() => {
           this.log('AudioContext state after resume', ctx.state);
+          this.prime();
           if (this.enabled) syncAudioForState();
         })
         .catch(err => this.log('AudioContext resume blocked', reason, err));
     } else if (ctx.state === 'interrupted' && typeof ctx.resume === 'function') {
       this.log('AudioContext interrupted, retrying resume from', reason);
-      ctx.resume().catch(err => this.log('Interrupted resume failed', reason, err));
+      ctx.resume()
+        .then(() => this.prime())
+        .catch(err => this.log('Interrupted resume failed', reason, err));
+    } else if (ctx.state === 'running') {
+      this.prime();
     }
     return ctx;
   },
@@ -2479,6 +2507,10 @@ document.addEventListener('pointerdown', event => {
 
 document.addEventListener('touchstart', () => {
   engageAudio('touchstart');
+}, { passive: true });
+
+document.addEventListener('touchend', () => {
+  engageAudio('touchend');
 }, { passive: true });
 
 document.addEventListener('click', () => {
