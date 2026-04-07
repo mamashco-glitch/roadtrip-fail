@@ -113,6 +113,7 @@ const audio = {
   masterGain: null,
   musicGain: null,
   sfxGain: null,
+  compressor: null,
   noiseBuffer: null,
   currentTrack: '',
   currentStep: 0,
@@ -139,14 +140,22 @@ const audio = {
     this.masterGain = this.ctx.createGain();
     this.musicGain = this.ctx.createGain();
     this.sfxGain = this.ctx.createGain();
+    this.compressor = this.ctx.createDynamicsCompressor();
 
-    this.masterGain.gain.value = this.enabled ? 0.6 : 0;
-    this.musicGain.gain.value = 0.14;
-    this.sfxGain.gain.value = 0.35;
+    this.masterGain.gain.value = this.enabled ? 0.95 : 0;
+    this.musicGain.gain.value = 0.24;
+    this.sfxGain.gain.value = 0.62;
+
+    this.compressor.threshold.value = -18;
+    this.compressor.knee.value = 18;
+    this.compressor.ratio.value = 3;
+    this.compressor.attack.value = 0.01;
+    this.compressor.release.value = 0.2;
 
     this.musicGain.connect(this.masterGain);
     this.sfxGain.connect(this.masterGain);
-    this.masterGain.connect(this.ctx.destination);
+    this.masterGain.connect(this.compressor);
+    this.compressor.connect(this.ctx.destination);
 
     const noiseLength = this.ctx.sampleRate;
     const noiseBuffer = this.ctx.createBuffer(1, noiseLength, this.ctx.sampleRate);
@@ -199,7 +208,7 @@ const audio = {
     if (this.masterGain) {
       const now = this.ctx.currentTime;
       this.masterGain.gain.cancelScheduledValues(now);
-      this.masterGain.gain.setTargetAtTime(enabled ? 0.6 : 0, now, 0.03);
+      this.masterGain.gain.setTargetAtTime(enabled ? 0.95 : 0, now, 0.03);
     }
     if (!enabled) {
       this.stopMusic();
@@ -279,7 +288,7 @@ const audio = {
     if (step.bass) {
       this.tone(step.bass, stepSeconds * 0.88, {
         type: 'triangle',
-        volume: trackName === 'driving' ? 0.025 : 0.03,
+        volume: trackName === 'driving' ? 0.045 : 0.05,
         attack: 0.02,
         release: 0.16,
         destination: this.musicGain
@@ -288,7 +297,7 @@ const audio = {
     if (step.pad && step.pad.length) {
       this.playChord(step.pad, stepSeconds * 0.94, {
         type: 'sine',
-        volume: trackName === 'driving' ? 0.013 : 0.015,
+        volume: trackName === 'driving' ? 0.026 : 0.03,
         attack: 0.05,
         release: 0.22,
         destination: this.musicGain
@@ -297,7 +306,7 @@ const audio = {
     if (step.lead && step.lead.length) {
       this.playChord(step.lead, stepSeconds * 0.52, {
         type: leadType,
-        volume: trackName === 'driving' ? 0.022 : 0.026,
+        volume: trackName === 'driving' ? 0.04 : 0.045,
         attack: 0.01,
         release: 0.11,
         destination: this.musicGain
@@ -306,7 +315,7 @@ const audio = {
     if (step.harmony && step.harmony.length) {
       this.playChord(step.harmony, stepSeconds * 0.34, {
         type: 'square',
-        volume: 0.012,
+        volume: 0.022,
         attack: 0.008,
         release: 0.08,
         destination: this.musicGain
