@@ -109,6 +109,7 @@ const audio = {
   ctx: null,
   enabled: true,
   unlocked: false,
+  debug: false,
   masterGain: null,
   musicGain: null,
   sfxGain: null,
@@ -122,6 +123,11 @@ const audio = {
     const storedEnabled = window.localStorage.getItem('roadtrip-audio-enabled');
     this.enabled = storedEnabled !== 'false';
     this.updateToggle();
+  },
+
+  log(...args) {
+    if (!this.debug) return;
+    console.log('[roadtrip-audio]', ...args);
   },
 
   ensureContext() {
@@ -147,6 +153,7 @@ const audio = {
     const data = noiseBuffer.getChannelData(0);
     for (let i = 0; i < noiseLength; i++) data[i] = Math.random() * 2 - 1;
     this.noiseBuffer = noiseBuffer;
+    this.log('AudioContext created', this.ctx.state);
 
     return this.ctx;
   },
@@ -154,13 +161,27 @@ const audio = {
   unlock() {
     const ctx = this.ensureContext();
     if (!ctx) return;
-    if (!this.enabled) {
-      this.unlocked = true;
-      return;
-    }
-    if (ctx.state === 'suspended') ctx.resume();
     this.unlocked = true;
-    syncAudioForState();
+    this.resumeIfNeeded('unlock');
+  },
+
+  resumeIfNeeded(reason = 'resume') {
+    const ctx = this.ensureContext();
+    if (!ctx) return null;
+    this.unlocked = true;
+    if (ctx.state === 'suspended') {
+      this.log('Resuming audio context from', reason);
+      ctx.resume()
+        .then(() => {
+          this.log('AudioContext state after resume', ctx.state);
+          if (this.enabled) syncAudioForState();
+        })
+        .catch(err => this.log('AudioContext resume blocked', reason, err));
+    } else if (ctx.state === 'interrupted' && typeof ctx.resume === 'function') {
+      this.log('AudioContext interrupted, retrying resume from', reason);
+      ctx.resume().catch(err => this.log('Interrupted resume failed', reason, err));
+    }
+    return ctx;
   },
 
   updateToggle() {
@@ -174,7 +195,7 @@ const audio = {
     this.enabled = enabled;
     window.localStorage.setItem('roadtrip-audio-enabled', String(enabled));
     this.updateToggle();
-    this.ensureContext();
+    const ctx = this.resumeIfNeeded('setEnabled');
     if (this.masterGain) {
       const now = this.ctx.currentTime;
       this.masterGain.gain.cancelScheduledValues(now);
@@ -182,7 +203,7 @@ const audio = {
     }
     if (!enabled) {
       this.stopMusic();
-    } else if (this.unlocked) {
+    } else if (ctx) {
       syncAudioForState();
       this.playSfx('toggleOn');
     }
@@ -190,7 +211,9 @@ const audio = {
 
   pulseNoise(duration, volume, filterType, frequency) {
     if (!this.enabled || !this.unlocked || !this.noiseBuffer) return;
-    const now = this.ctx.currentTime;
+    const ctx = this.resumeIfNeeded('pulseNoise');
+    if (!ctx || ctx.state !== 'running') return;
+    const now = ctx.currentTime;
     const source = this.ctx.createBufferSource();
     const filter = this.ctx.createBiquadFilter();
     const gain = this.ctx.createGain();
@@ -208,8 +231,8 @@ const audio = {
 
   tone(freq, duration, opts = {}) {
     if (!this.enabled || !this.unlocked) return;
-    const ctx = this.ensureContext();
-    if (!ctx) return;
+    const ctx = this.resumeIfNeeded('tone');
+    if (!ctx || ctx.state !== 'running') return;
     const {
       type = 'square',
       volume = 0.08,
@@ -241,6 +264,11 @@ const audio = {
 
   playMusicStep(trackName) {
     if (!this.enabled || !this.unlocked) return;
+    const ctx = this.resumeIfNeeded(`music:${trackName}`);
+    if (!ctx || ctx.state !== 'running') {
+      this.musicTimer = window.setTimeout(() => this.playMusicStep(trackName), 400);
+      return;
+    }
     const track = MUSIC_TRACKS[trackName];
     if (!track) return;
     const step = track.steps[this.currentStep % track.steps.length];
@@ -289,11 +317,18 @@ const audio = {
   },
 
   setMusic(trackName) {
-    if (this.currentTrack === trackName) return;
+    if (this.currentTrack === trackName) {
+      if (trackName && this.enabled && this.unlocked && !this.musicTimer) {
+        this.resumeIfNeeded(`restartMusic:${trackName}`);
+        this.playMusicStep(trackName);
+      }
+      return;
+    }
     this.stopMusic();
     this.currentTrack = trackName;
     this.currentStep = 0;
     if (!trackName || !this.enabled || !this.unlocked) return;
+    this.resumeIfNeeded(`setMusic:${trackName}`);
     this.playMusicStep(trackName);
   },
 
@@ -308,6 +343,8 @@ const audio = {
 
   playSfx(name) {
     if (!this.enabled || !this.unlocked) return;
+    const ctx = this.resumeIfNeeded(`sfx:${name}`);
+    if (!ctx) return;
     switch (name) {
       case 'ui':
         this.tone(660, 0.05, { volume: 0.05 });
@@ -1155,6 +1192,7 @@ function resetShop() {
 
 document.querySelectorAll('.shop-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    audio.unlock();
     const cost = parseInt(btn.dataset.cost);
     const item = btn.dataset.item;
     if (cost > state.money) return;
@@ -1232,7 +1270,10 @@ function hideCrashScene() {
   startGameLoop();
 }
 
-document.getElementById('crash-continue').addEventListener('click', hideCrashScene);
+document.getElementById('crash-continue').addEventListener('click', () => {
+  engageAudio('crash-continue');
+  hideCrashScene();
+});
 
 // --- Snack Hunt mini-game ---
 function showSnackHunt() {
@@ -1273,7 +1314,10 @@ function exitSnackHunt() {
   startGameLoop();
 }
 
-document.getElementById('snack-hunt-exit').addEventListener('click', exitSnackHunt);
+document.getElementById('snack-hunt-exit').addEventListener('click', () => {
+  engageAudio('snack-exit');
+  exitSnackHunt();
+});
 
 // --- Traffic mini-game ---
 
@@ -1712,9 +1756,11 @@ function exitTrafficGame() {
 const fireBtn = document.getElementById('snack-hunt-fire');
 fireBtn.addEventListener('touchstart', e => {
   e.preventDefault();                        // block ghost click & scroll
+  engageAudio('snack-fire-touch');
   if (currentMode === 'minigame-snack') fireProjectile();
 }, { passive: false });
 fireBtn.addEventListener('click', () => {
+  engageAudio('snack-fire-click');
   if (currentMode === 'minigame-snack') fireProjectile();
 });
 
@@ -2184,7 +2230,10 @@ function triggerEvent(event) {
     const btn = document.createElement('button');
     btn.className = 'menu-btn';
     btn.textContent = '► ' + choice.label;
-    btn.addEventListener('click', () => resolveEvent(choice.effect));
+    btn.addEventListener('click', () => {
+      engageAudio('event-choice');
+      resolveEvent(choice.effect);
+    });
     choicesEl.appendChild(btn);
   });
 
@@ -2334,6 +2383,7 @@ function startGameLoop() {
 }
 
 function startDriving() {
+  audio.unlock();
   initPassengers();
 
   // Calculate starting snacks from cart
@@ -2363,10 +2413,19 @@ function startDriving() {
 }
 
 // --- Button wiring ---
+function engageAudio(reason = 'ui') {
+  audio.unlock();
+  audio.resumeIfNeeded(reason);
+}
+
 function bindPress(el, handler) {
-  el.addEventListener('click', handler);
+  el.addEventListener('click', e => {
+    engageAudio('button-click');
+    handler(e);
+  });
   el.addEventListener('touchstart', e => {
     e.preventDefault();
+    engageAudio('button-touchstart');
     handler(e);
   }, { passive: false });
 }
@@ -2398,19 +2457,36 @@ syncAudioForState();
 
 if (audioToggleBtn) {
   audioToggleBtn.addEventListener('click', () => {
-    audio.unlock();
+    engageAudio('toggle-click');
     audio.setEnabled(!audio.enabled);
   });
 }
 
 document.addEventListener('pointerdown', event => {
+  engageAudio('pointerdown');
   const button = event.target.closest('button');
-  if (!button) return;
-  audio.unlock();
-  if (button !== audioToggleBtn) audio.playSfx('ui');
+  if (button && button !== audioToggleBtn) audio.playSfx('ui');
+}, { passive: true });
+
+document.addEventListener('touchstart', () => {
+  engageAudio('touchstart');
+}, { passive: true });
+
+document.addEventListener('click', () => {
+  engageAudio('document-click');
 }, { passive: true });
 
 document.addEventListener('keydown', event => {
   if (event.repeat) return;
-  if (event.key === 'Enter' || event.key === ' ') audio.unlock();
+  if (event.key === 'Enter' || event.key === ' ') engageAudio('keydown');
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && audio.enabled) {
+    audio.resumeIfNeeded('visibilitychange');
+  }
+});
+
+window.addEventListener('pageshow', () => {
+  if (audio.enabled) audio.resumeIfNeeded('pageshow');
 });
