@@ -2,6 +2,425 @@
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
+  syncAudioForState();
+}
+
+function getVisibleScreenId() {
+  const visibleScreen = document.querySelector('.screen:not(.hidden)');
+  return visibleScreen ? visibleScreen.id : '';
+}
+
+const audioToggleBtn = document.getElementById('audio-toggle');
+
+const MUSIC_TRACKS = {
+  menu: {
+    stepMs: 220,
+    steps: [
+      { bass: 130.81, pad: [261.63, 329.63], lead: [523.25], len: 2, leadType: 'triangle' },
+      { lead: [659.25], len: 1, leadType: 'triangle' },
+      { bass: 146.83, pad: [293.66, 349.23], lead: [587.33], len: 2, leadType: 'triangle' },
+      { lead: [739.99], harmony: [440.0], len: 1, leadType: 'triangle' },
+      { bass: 164.81, pad: [329.63, 392.0], lead: [659.25], len: 2, leadType: 'triangle' },
+      { lead: [783.99], len: 1, leadType: 'triangle' },
+      { bass: 146.83, pad: [293.66, 349.23], lead: [587.33], len: 2, leadType: 'triangle' },
+      { lead: [523.25], harmony: [392.0], len: 2, leadType: 'triangle' },
+      { bass: 130.81, pad: [261.63, 329.63], lead: [523.25], len: 1, leadType: 'triangle' },
+      { lead: [659.25], len: 1, leadType: 'triangle' },
+      { bass: 174.61, pad: [349.23, 440.0], lead: [783.99], len: 2, leadType: 'triangle' },
+      { lead: [659.25], harmony: [523.25], len: 2, leadType: 'triangle' }
+    ]
+  },
+  driving: {
+    stepMs: 190,
+    steps: [
+      { bass: 98.0, pad: [196.0, 246.94], lead: [392.0], len: 2, leadType: 'triangle' },
+      { lead: [440.0], len: 1, leadType: 'triangle' },
+      { lead: [493.88], harmony: [329.63], len: 1, leadType: 'triangle' },
+      { bass: 110.0, pad: [220.0, 277.18], lead: [440.0], len: 2, leadType: 'triangle' },
+      { lead: [392.0], len: 1, leadType: 'triangle' },
+      { lead: [329.63], len: 1, leadType: 'triangle' },
+      { bass: 130.81, pad: [261.63, 329.63], lead: [523.25], len: 2, leadType: 'triangle' },
+      { lead: [587.33], harmony: [392.0], len: 1, leadType: 'triangle' },
+      { lead: [523.25], len: 1, leadType: 'triangle' },
+      { bass: 146.83, pad: [293.66, 369.99], lead: [587.33], len: 2, leadType: 'triangle' },
+      { lead: [659.25], len: 1, leadType: 'triangle' },
+      { lead: [587.33], harmony: [440.0], len: 1, leadType: 'triangle' },
+
+      { bass: 98.0, pad: [196.0, 246.94], lead: [392.0], len: 2, leadType: 'triangle' },
+      { lead: [329.63], len: 1, leadType: 'triangle' },
+      { lead: [392.0], harmony: [293.66], len: 1, leadType: 'triangle' },
+      { bass: 110.0, pad: [220.0, 277.18], lead: [440.0], len: 2, leadType: 'triangle' },
+      { lead: [493.88], len: 1, leadType: 'triangle' },
+      { lead: [587.33], len: 1, leadType: 'triangle' },
+      { bass: 130.81, pad: [261.63, 329.63], lead: [523.25], len: 2, leadType: 'triangle' },
+      { lead: [493.88], harmony: [392.0], len: 1, leadType: 'triangle' },
+      { bass: 146.83, pad: [293.66, 369.99], lead: [587.33], len: 2, leadType: 'triangle' },
+      { lead: [659.25], len: 1, leadType: 'triangle' },
+      { lead: [523.25], harmony: [392.0], len: 1, leadType: 'triangle' },
+      { bass: 98.0, pad: [196.0, 246.94], lead: [392.0], len: 3, leadType: 'triangle' }
+    ]
+  },
+  snack: {
+    stepMs: 170,
+    steps: [
+      { bass: 130.81, pad: [261.63, 329.63], lead: [523.25], len: 1, leadType: 'triangle' },
+      { lead: [659.25], len: 1, leadType: 'triangle' },
+      { bass: 164.81, pad: [329.63, 392.0], lead: [783.99], len: 1, leadType: 'triangle' },
+      { lead: [659.25], harmony: [523.25], len: 1, leadType: 'triangle' },
+      { bass: 196.0, pad: [392.0, 493.88], lead: [880.0], len: 1, leadType: 'triangle' },
+      { lead: [783.99], len: 1, leadType: 'triangle' },
+      { bass: 164.81, pad: [329.63, 392.0], lead: [659.25], len: 1, leadType: 'triangle' },
+      { lead: [587.33], len: 2, leadType: 'triangle' },
+      { bass: 146.83, pad: [293.66, 369.99], lead: [739.99], len: 1, leadType: 'triangle' },
+      { lead: [659.25], harmony: [493.88], len: 1, leadType: 'triangle' },
+      { bass: 130.81, pad: [261.63, 329.63], lead: [523.25], len: 2, leadType: 'triangle' },
+      { lead: [659.25], len: 2, leadType: 'triangle' }
+    ]
+  },
+  traffic: {
+    stepMs: 180,
+    steps: [
+      { bass: 61.74, pad: [123.47, 155.56], lead: [246.94], len: 1, leadType: 'sawtooth' },
+      { lead: [293.66], len: 1, leadType: 'sawtooth' },
+      { bass: 73.42, pad: [146.83, 185.0], lead: [329.63], len: 1, leadType: 'sawtooth' },
+      { lead: [293.66], harmony: [220.0], len: 1, leadType: 'sawtooth' },
+      { bass: 82.41, pad: [164.81, 207.65], lead: [349.23], len: 1, leadType: 'sawtooth' },
+      { lead: [392.0], len: 1, leadType: 'sawtooth' },
+      { bass: 73.42, pad: [146.83, 185.0], lead: [329.63], len: 1, leadType: 'sawtooth' },
+      { lead: [293.66], len: 2, leadType: 'sawtooth' },
+      { bass: 65.41, pad: [130.81, 164.81], lead: [261.63], len: 1, leadType: 'sawtooth' },
+      { lead: [311.13], harmony: [196.0], len: 1, leadType: 'sawtooth' },
+      { bass: 73.42, pad: [146.83, 185.0], lead: [293.66], len: 1, leadType: 'sawtooth' },
+      { lead: [246.94], len: 2, leadType: 'sawtooth' }
+    ]
+  },
+  crash: {
+    stepMs: 220,
+    steps: [
+      { bass: 65.41, pad: [130.81], lead: [261.63], len: 1, leadType: 'triangle' },
+      { lead: [233.08], len: 1, leadType: 'triangle' },
+      { bass: 55.0, pad: [110.0], lead: [220.0], len: 1, leadType: 'triangle' },
+      { lead: [196.0], len: 2, leadType: 'triangle' }
+    ]
+  }
+};
+
+const audio = {
+  ctx: null,
+  enabled: true,
+  unlocked: false,
+  masterGain: null,
+  musicGain: null,
+  sfxGain: null,
+  noiseBuffer: null,
+  currentTrack: '',
+  currentStep: 0,
+  musicTimer: null,
+  fireCooldownUntil: 0,
+
+  init() {
+    const storedEnabled = window.localStorage.getItem('roadtrip-audio-enabled');
+    this.enabled = storedEnabled !== 'false';
+    this.updateToggle();
+  },
+
+  ensureContext() {
+    if (this.ctx) return this.ctx;
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return null;
+
+    this.ctx = new AudioCtx();
+    this.masterGain = this.ctx.createGain();
+    this.musicGain = this.ctx.createGain();
+    this.sfxGain = this.ctx.createGain();
+
+    this.masterGain.gain.value = this.enabled ? 0.6 : 0;
+    this.musicGain.gain.value = 0.14;
+    this.sfxGain.gain.value = 0.35;
+
+    this.musicGain.connect(this.masterGain);
+    this.sfxGain.connect(this.masterGain);
+    this.masterGain.connect(this.ctx.destination);
+
+    const noiseLength = this.ctx.sampleRate;
+    const noiseBuffer = this.ctx.createBuffer(1, noiseLength, this.ctx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseLength; i++) data[i] = Math.random() * 2 - 1;
+    this.noiseBuffer = noiseBuffer;
+
+    return this.ctx;
+  },
+
+  unlock() {
+    const ctx = this.ensureContext();
+    if (!ctx) return;
+    if (!this.enabled) {
+      this.unlocked = true;
+      return;
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    this.unlocked = true;
+    syncAudioForState();
+  },
+
+  updateToggle() {
+    if (!audioToggleBtn) return;
+    audioToggleBtn.textContent = `SOUND: ${this.enabled ? 'ON' : 'OFF'}`;
+    audioToggleBtn.classList.toggle('is-muted', !this.enabled);
+    audioToggleBtn.setAttribute('aria-pressed', String(!this.enabled));
+  },
+
+  setEnabled(enabled) {
+    this.enabled = enabled;
+    window.localStorage.setItem('roadtrip-audio-enabled', String(enabled));
+    this.updateToggle();
+    this.ensureContext();
+    if (this.masterGain) {
+      const now = this.ctx.currentTime;
+      this.masterGain.gain.cancelScheduledValues(now);
+      this.masterGain.gain.setTargetAtTime(enabled ? 0.6 : 0, now, 0.03);
+    }
+    if (!enabled) {
+      this.stopMusic();
+    } else if (this.unlocked) {
+      syncAudioForState();
+      this.playSfx('toggleOn');
+    }
+  },
+
+  pulseNoise(duration, volume, filterType, frequency) {
+    if (!this.enabled || !this.unlocked || !this.noiseBuffer) return;
+    const now = this.ctx.currentTime;
+    const source = this.ctx.createBufferSource();
+    const filter = this.ctx.createBiquadFilter();
+    const gain = this.ctx.createGain();
+    source.buffer = this.noiseBuffer;
+    filter.type = filterType;
+    filter.frequency.setValueAtTime(frequency, now);
+    gain.gain.setValueAtTime(Math.max(0.0001, volume), now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.sfxGain);
+    source.start(now);
+    source.stop(now + duration);
+  },
+
+  tone(freq, duration, opts = {}) {
+    if (!this.enabled || !this.unlocked) return;
+    const ctx = this.ensureContext();
+    if (!ctx) return;
+    const {
+      type = 'square',
+      volume = 0.08,
+      attack = 0.005,
+      release = 0.06,
+      slideTo = null,
+      detune = 0,
+      destination = this.sfxGain
+    } = opts;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+    if (slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(1, slideTo), now + duration);
+    if (detune) osc.detune.value = detune;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(volume, now + attack);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration + release);
+    osc.connect(gain);
+    gain.connect(destination);
+    osc.start(now);
+    osc.stop(now + duration + release + 0.02);
+  },
+
+  playChord(freqs, duration, opts = {}) {
+    freqs.forEach((freq, index) => this.tone(freq, duration, { ...opts, detune: (index - (freqs.length - 1) / 2) * 4 }));
+  },
+
+  playMusicStep(trackName) {
+    if (!this.enabled || !this.unlocked) return;
+    const track = MUSIC_TRACKS[trackName];
+    if (!track) return;
+    const step = track.steps[this.currentStep % track.steps.length];
+    const stepBeats = step.len || 1;
+    const stepSeconds = (track.stepMs * stepBeats) / 1000;
+    const leadType = step.leadType || (trackName === 'traffic' ? 'sawtooth' : 'triangle');
+
+    if (step.bass) {
+      this.tone(step.bass, stepSeconds * 0.88, {
+        type: 'triangle',
+        volume: trackName === 'driving' ? 0.025 : 0.03,
+        attack: 0.02,
+        release: 0.16,
+        destination: this.musicGain
+      });
+    }
+    if (step.pad && step.pad.length) {
+      this.playChord(step.pad, stepSeconds * 0.94, {
+        type: 'sine',
+        volume: trackName === 'driving' ? 0.013 : 0.015,
+        attack: 0.05,
+        release: 0.22,
+        destination: this.musicGain
+      });
+    }
+    if (step.lead && step.lead.length) {
+      this.playChord(step.lead, stepSeconds * 0.52, {
+        type: leadType,
+        volume: trackName === 'driving' ? 0.022 : 0.026,
+        attack: 0.01,
+        release: 0.11,
+        destination: this.musicGain
+      });
+    }
+    if (step.harmony && step.harmony.length) {
+      this.playChord(step.harmony, stepSeconds * 0.34, {
+        type: 'square',
+        volume: 0.012,
+        attack: 0.008,
+        release: 0.08,
+        destination: this.musicGain
+      });
+    }
+    this.currentStep = (this.currentStep + 1) % track.steps.length;
+    this.musicTimer = window.setTimeout(() => this.playMusicStep(trackName), track.stepMs * stepBeats);
+  },
+
+  setMusic(trackName) {
+    if (this.currentTrack === trackName) return;
+    this.stopMusic();
+    this.currentTrack = trackName;
+    this.currentStep = 0;
+    if (!trackName || !this.enabled || !this.unlocked) return;
+    this.playMusicStep(trackName);
+  },
+
+  stopMusic() {
+    if (this.musicTimer) {
+      window.clearTimeout(this.musicTimer);
+      this.musicTimer = null;
+    }
+    this.currentTrack = '';
+    this.currentStep = 0;
+  },
+
+  playSfx(name) {
+    if (!this.enabled || !this.unlocked) return;
+    switch (name) {
+      case 'ui':
+        this.tone(660, 0.05, { volume: 0.05 });
+        this.tone(990, 0.03, { volume: 0.03 });
+        break;
+      case 'purchase':
+        this.tone(523.25, 0.05, { volume: 0.06 });
+        window.setTimeout(() => this.tone(783.99, 0.08, { volume: 0.07 }), 55);
+        break;
+      case 'event':
+        this.tone(587.33, 0.06, { volume: 0.05 });
+        window.setTimeout(() => this.tone(783.99, 0.09, { volume: 0.06 }), 65);
+        break;
+      case 'tripStart':
+        this.tone(392.0, 0.08, { volume: 0.07 });
+        window.setTimeout(() => this.tone(523.25, 0.09, { volume: 0.08 }), 80);
+        window.setTimeout(() => this.tone(659.25, 0.12, { volume: 0.09 }), 160);
+        break;
+      case 'crash':
+        this.pulseNoise(0.22, 0.16, 'bandpass', 420);
+        this.tone(180, 0.24, { type: 'sawtooth', volume: 0.07, slideTo: 70 });
+        break;
+      case 'snackStart':
+        this.tone(659.25, 0.07, { volume: 0.06 });
+        window.setTimeout(() => this.tone(880.0, 0.09, { volume: 0.07 }), 70);
+        break;
+      case 'snackFire':
+        if (Date.now() < this.fireCooldownUntil) return;
+        this.fireCooldownUntil = Date.now() + 90;
+        this.tone(1046.5, 0.03, { type: 'square', volume: 0.04, slideTo: 880.0 });
+        break;
+      case 'snackHit':
+        this.tone(1318.51, 0.04, { type: 'triangle', volume: 0.05 });
+        break;
+      case 'bossHit':
+        this.tone(293.66, 0.08, { type: 'sawtooth', volume: 0.07, slideTo: 246.94 });
+        break;
+      case 'snackScore':
+        this.tone(523.25, 0.05, { volume: 0.06 });
+        window.setTimeout(() => this.tone(659.25, 0.06, { volume: 0.06 }), 55);
+        window.setTimeout(() => this.tone(783.99, 0.09, { volume: 0.07 }), 110);
+        break;
+      case 'snackMiss':
+        this.tone(220.0, 0.12, { type: 'triangle', volume: 0.05, slideTo: 164.81 });
+        break;
+      case 'trafficStart':
+        this.tone(349.23, 0.06, { type: 'sawtooth', volume: 0.06 });
+        window.setTimeout(() => this.tone(293.66, 0.07, { type: 'sawtooth', volume: 0.06 }), 70);
+        break;
+      case 'lane':
+        this.tone(440.0, 0.03, { type: 'square', volume: 0.04 });
+        break;
+      case 'trafficFail':
+        this.pulseNoise(0.14, 0.12, 'lowpass', 300);
+        this.tone(246.94, 0.16, { type: 'sawtooth', volume: 0.07, slideTo: 146.83 });
+        break;
+      case 'trafficWin':
+        this.tone(392.0, 0.05, { volume: 0.06 });
+        window.setTimeout(() => this.tone(523.25, 0.06, { volume: 0.07 }), 60);
+        window.setTimeout(() => this.tone(659.25, 0.1, { volume: 0.08 }), 120);
+        break;
+      case 'win':
+        this.tone(523.25, 0.08, { volume: 0.08 });
+        window.setTimeout(() => this.tone(659.25, 0.08, { volume: 0.08 }), 90);
+        window.setTimeout(() => this.tone(783.99, 0.12, { volume: 0.09 }), 180);
+        window.setTimeout(() => this.tone(1046.5, 0.18, { volume: 0.1 }), 280);
+        break;
+      case 'lose':
+        this.pulseNoise(0.2, 0.1, 'lowpass', 250);
+        this.tone(329.63, 0.1, { type: 'triangle', volume: 0.06, slideTo: 196.0 });
+        window.setTimeout(() => this.tone(246.94, 0.18, { type: 'triangle', volume: 0.06, slideTo: 110.0 }), 110);
+        break;
+      case 'toggleOn':
+        this.tone(783.99, 0.05, { volume: 0.05 });
+        break;
+    }
+  }
+};
+
+function syncAudioForState() {
+  const screenId = getVisibleScreenId();
+
+  if (!audio.enabled) {
+    audio.stopMusic();
+    return;
+  }
+
+  if (isCrashScene) {
+    audio.setMusic('crash');
+    return;
+  }
+
+  if (currentMode === 'minigame-snack') {
+    audio.setMusic('snack');
+    return;
+  }
+
+  if (currentMode === 'minigame-traffic') {
+    audio.setMusic('traffic');
+    return;
+  }
+
+  if (screenId === 'screen-game' && currentMode === 'driving') {
+    audio.setMusic('driving');
+    return;
+  }
+
+  if (screenId === 'screen-win' || screenId === 'screen-lose') {
+    audio.stopMusic();
+    return;
+  }
+
+  audio.setMusic('menu');
 }
 
 // --- Game state ---
@@ -394,6 +813,7 @@ function fireProjectile() {
     dx: vec.dx * PROJECTILE_SPEED,
     dy: vec.dy * PROJECTILE_SPEED,
   });
+  audio.playSfx('snackFire');
 }
 
 // --- Passenger system ---
@@ -743,6 +1163,7 @@ document.querySelectorAll('.shop-btn').forEach(btn => {
     updateMoneyDisplay();
     updateCartDisplay();
     refreshShopButtons();
+    audio.playSfx('purchase');
   });
 });
 
@@ -799,12 +1220,15 @@ function showCrashScene(msg) {
   document.querySelector('.road-scene').classList.add('hidden');
   document.getElementById('crash-scene-msg').textContent = msg;
   document.getElementById('crash-scene').classList.remove('hidden');
+  audio.playSfx('crash');
+  syncAudioForState();
 }
 
 function hideCrashScene() {
   isCrashScene = false;
   document.getElementById('crash-scene').classList.add('hidden');
   document.querySelector('.road-scene').classList.remove('hidden');
+  syncAudioForState();
   startGameLoop();
 }
 
@@ -815,6 +1239,8 @@ function showSnackHunt() {
   currentMode = 'minigame-snack';
 
   document.getElementById('snack-hunt').classList.remove('hidden');
+  audio.playSfx('snackStart');
+  syncAudioForState();
   initSnackHunt();
 }
 
@@ -835,12 +1261,15 @@ function exitSnackHunt() {
   state.snacks = Math.min(100, state.snacks + earned);
   if (earned > 0) {
     setStatusMsg(`+${earned} snacks from the gas station haul!`, 3000);
+    audio.playSfx('snackScore');
   } else {
     setStatusMsg(`Couldn't grab anything. Still hungry.`, 3000);
+    audio.playSfx('snackMiss');
   }
 
   eventTick = 0;
   eventTickTarget = 12 + Math.floor(Math.random() * 9);
+  syncAudioForState();
   startGameLoop();
 }
 
@@ -955,6 +1384,7 @@ function buildTrafficLanes(canvas) {
 function trafficSwitchLane(dir) {
   trafficPlayer.lane    = Math.max(0, Math.min(TRAFFIC_LANE_COUNT - 1, trafficPlayer.lane + dir));
   trafficPlayer.targetX = trafficLanes[trafficPlayer.lane] - TRAFFIC_PLAYER_WIDTH / 2;
+  audio.playSfx('lane');
 }
 
 // Returns the current scroll speed based on elapsed frames
@@ -982,8 +1412,10 @@ function failTrafficGame() {
   state.gas    = Math.max(0, state.gas    - 12);
   state.morale = Math.max(0, state.morale - 10);
   setStatusMsg('Stuck in traffic. Lost gas and morale.', 4000);
+  audio.playSfx('trafficFail');
   eventTick = 0;
   eventTickTarget = 12 + Math.floor(Math.random() * 9);
+  syncAudioForState();
   startGameLoop();
 }
 
@@ -1239,6 +1671,8 @@ function showTrafficGame() {
   clearInterval(gameInterval);
   document.getElementById('traffic-game').classList.toggle('touch-active', isMobileTouchDevice());
   document.getElementById('traffic-game').classList.remove('hidden');
+  audio.playSfx('trafficStart');
+  syncAudioForState();
   initTrafficGame();
 }
 
@@ -1253,8 +1687,10 @@ function winTrafficGame() {
   state.morale = Math.min(state.moraleMax, state.morale + 12);
   state.gas    = Math.min(100, state.gas + 6);
   setStatusMsg('You weaved through! Morale up, saved some gas too.', 4000);
+  audio.playSfx('trafficWin');
   eventTick = 0;
   eventTickTarget = 12 + Math.floor(Math.random() * 9);
+  syncAudioForState();
   startGameLoop();
 }
 
@@ -1268,6 +1704,7 @@ function exitTrafficGame() {
   document.querySelector('.road-scene').classList.remove('paused');
   eventTick = 0;
   eventTickTarget = 12 + Math.floor(Math.random() * 9);
+  syncAudioForState();
   startGameLoop();
 }
 
@@ -1619,10 +2056,12 @@ function initSnackHunt() {
             junkBoss.hitStage = getJunkBossStageIndex(junkBoss.hp);
             junkBoss.hitTimer = JUNK_BOSS_HIT_FLASH_FRAMES;
             junkBoss.hp--;
+            audio.playSfx('bossHit');
             snackProjectiles.splice(pi, 1);
             if (junkBoss.hp <= 0) {
               junkBoss = null;
               snackBossBonus += JUNK_BOSS_REWARD;
+              audio.playSfx('snackScore');
             }
             continue outer;
           }
@@ -1640,6 +2079,7 @@ function initSnackHunt() {
             snackCollected[s.type]++;          // record for scoring
             snackItems.splice(si, 1);
             snackProjectiles.splice(pi, 1);
+            audio.playSfx('snackHit');
             // Shorten respawn wait after a hit so the game stays active
             if (snackRespawnTimer > 120) snackRespawnTimer = 120;
             continue outer;
@@ -1734,6 +2174,7 @@ function triggerEvent(event) {
   clearInterval(gameInterval);
   gameInterval = null;
   document.querySelector('.road-scene').classList.add('paused');
+  currentMode = 'event';
 
   // Populate event box
   document.getElementById('event-desc').textContent = event.desc;
@@ -1751,6 +2192,7 @@ function triggerEvent(event) {
   document.querySelector('.stats').classList.add('hidden');
   document.querySelector('.progress-section').classList.add('hidden');
   document.getElementById('passenger-row').classList.add('hidden');
+  audio.playSfx('event');
 }
 
 function resolveEvent(effect) {
@@ -1765,10 +2207,12 @@ function resolveEvent(effect) {
   statusLockUntil += 4000;
 
   // Only resume driving if the effect didn't launch a mini-game
+  if (currentMode === 'event') currentMode = 'driving';
   if (currentMode === 'driving') {
     document.querySelector('.road-scene').classList.remove('paused');
     eventTick = 0;
     eventTickTarget = 12 + Math.floor(Math.random() * 9);
+    syncAudioForState();
     startGameLoop();
   }
   // Otherwise the mini-game's own exit handler will restart driving
@@ -1865,6 +2309,7 @@ function startGameLoop() {
     if (state.progress >= 100) {
       clearInterval(gameInterval);
       showScreen('screen-win');
+      audio.playSfx('win');
       return;
     }
 
@@ -1874,6 +2319,7 @@ function startGameLoop() {
       document.getElementById('lose-reason').textContent =
         'You ran out of gas on the side of the road.\nNo one is coming to help.';
       showScreen('screen-lose');
+      audio.playSfx('lose');
       return;
     }
     if (state.morale <= 0) {
@@ -1881,6 +2327,7 @@ function startGameLoop() {
       document.getElementById('lose-reason').textContent =
         'The family has completely lost it.\nTrip cancelled. No one is speaking to anyone.';
       showScreen('screen-lose');
+      audio.playSfx('lose');
       return;
     }
   }, 1000);
@@ -1910,6 +2357,8 @@ function startDriving() {
   eventTickTarget    = 12 + Math.floor(Math.random() * 9);
   eventDeck      = []; // fresh shuffle each new game
   lastEventIndex = -1;
+  audio.playSfx('tripStart');
+  syncAudioForState();
   startGameLoop();
 }
 
@@ -1942,4 +2391,26 @@ document.querySelectorAll('.back-btn').forEach(btn => {
     document.querySelector('.road-scene').classList.remove('paused');
     showScreen(btn.dataset.target);
   });
+});
+
+audio.init();
+syncAudioForState();
+
+if (audioToggleBtn) {
+  audioToggleBtn.addEventListener('click', () => {
+    audio.unlock();
+    audio.setEnabled(!audio.enabled);
+  });
+}
+
+document.addEventListener('pointerdown', event => {
+  const button = event.target.closest('button');
+  if (!button) return;
+  audio.unlock();
+  if (button !== audioToggleBtn) audio.playSfx('ui');
+}, { passive: true });
+
+document.addEventListener('keydown', event => {
+  if (event.repeat) return;
+  if (event.key === 'Enter' || event.key === ' ') audio.unlock();
 });

@@ -16,6 +16,40 @@ body {
   justify-content: center;
 }
 
+.audio-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 50;
+  background: rgba(10, 10, 10, 0.92);
+  border: 2px solid #f5c518;
+  color: #f5c518;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  letter-spacing: 1px;
+  padding: 10px 12px;
+  cursor: pointer;
+  min-width: 130px;
+}
+
+.audio-toggle:hover,
+.audio-toggle:focus {
+  background: #f5c518;
+  color: #0a0a0a;
+  outline: none;
+}
+
+.audio-toggle.is-muted {
+  border-color: #666;
+  color: #999;
+}
+
+.audio-toggle.is-muted:hover,
+.audio-toggle.is-muted:focus {
+  background: #444;
+  color: #f0f0f0;
+}
+
 .screen {
   width: 100%;
   max-width: 700px;
@@ -767,6 +801,14 @@ body {
 }
 
 @media (max-width: 768px), (pointer: coarse) {
+  .audio-toggle {
+    top: 10px;
+    right: 10px;
+    font-size: 0.4rem;
+    padding: 9px 10px;
+    min-width: 112px;
+  }
+
   .traffic-game,
   .snack-hunt {
     height: 100dvh;
