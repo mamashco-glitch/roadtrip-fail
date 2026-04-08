@@ -517,9 +517,9 @@ const itemNames = {
 
 // Snacks added per food item purchased
 const snackValue = {
-  'snackies':    12,
-  'giant-chips': 18,
-  'burrito':     10
+  'snackies':    8,
+  'giant-chips': 20,
+  'burrito':     16
 };
 
 let gameInterval      = null;

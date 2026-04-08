@@ -255,6 +255,11 @@ body {
   color: #888;
 }
 
+.item-value {
+  font-size: 0.48rem;
+  color: #86d993;
+}
+
 .shop-btn {
   background: transparent;
   border: 2px solid #f5c518;
