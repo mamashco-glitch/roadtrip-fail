@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
+  <link rel="apple-touch-icon" href="assets/images/vehicles/station-wagon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <title>The RoadTrip Fail</title>
+  <link rel="stylesheet" href="css/style.css?v=10">
+</head>
+<body>
+  <button class="audio-toggle" id="audio-toggle" type="button" aria-pressed="false">SOUND: ON</button>
+
+  <!-- TITLE SCREEN -->
+  <div class="screen" id="screen-title">
+    <div class="title-box">
+      <h1 class="game-title">THE ROADTRIP FAIL</h1>
+      <p class="tagline">Keep your family fed, entertained, and barely holding it together long enough to survive the vacation.</p>
+      <p class="description">Buy supplies, stop for gas, keep the car running, manage morale, and try not to let boredom, breakdowns, or bad decisions destroy the trip before you reach your destination.</p>
+    </div>
+    <div class="menu">
+      <button class="menu-btn" id="btn-start">► Start Trip</button>
+      <button class="menu-btn" id="btn-how">► How to Play</button>
+      <button class="menu-btn" id="btn-credits">► Credits</button>
+    </div>
+    <div class="footer">
+      <span class="blink">PRESS START</span>
+    </div>
+  </div>
+
+  <!-- PREP SHOP SCREEN -->
+  <div class="screen hidden" id="screen-shop">
+    <h2 class="screen-title">PREP SHOP</h2>
+    <p class="screen-body">Stock up before you hit the road.</p>
+
+    <div class="money-display">
+      MONEY: $<span id="money-amount">100</span>
+    </div>
+
+    <div class="shop-grid">
+      <div class="shop-item">
+        <div class="item-info">
+          <span class="item-name">Snackies</span>
+          <span class="item-cost">$10</span>
+          <span class="item-value">+8 snack value</span>
+        </div>
+        <button class="shop-btn" data-item="snackies" data-cost="10">BUY</button>
+      </div>
+      <div class="shop-item">
+        <div class="item-info">
+          <span class="item-name">Giant Chips</span>
+          <span class="item-cost">$20</span>
+          <span class="item-value">+20 snack value</span>
+        </div>
+        <button class="shop-btn" data-item="giant-chips" data-cost="20">BUY</button>
+      </div>
+      <div class="shop-item">
+        <div class="item-info">
+          <span class="item-name">Gas Station Burrito</span>
+          <span class="item-cost">$15</span>
+          <span class="item-value">+16 snack value</span>
+        </div>
+        <button class="shop-btn" data-item="burrito" data-cost="15">BUY</button>
+      </div>
+
+      <div class="shop-item">
+        <div class="item-info">
+          <span class="item-name">Spare Tire</span>
+          <span class="item-cost">$25</span>
+        </div>
+        <button class="shop-btn" data-item="spare-tire" data-cost="25">BUY</button>
+      </div>
+    </div>
+
+    <div class="cart">
+      <p class="cart-label">CART:</p>
+      <p id="cart-contents" class="cart-empty">Nothing yet.</p>
+    </div>
+
+    <div class="shop-actions">
+      <button class="menu-btn" id="btn-drive">► Next: Choose Your Crew</button>
+      <button class="menu-btn back-btn" data-target="screen-title">◄ Back to Title</button>
+    </div>
+  </div>
+
+  <!-- NAMING SCREEN -->
+  <div class="screen hidden" id="screen-name">
+    <h2 class="screen-title">WHO'S COMING?</h2>
+    <p class="screen-body">Name your passengers. Leave blank for defaults.</p>
+    <div class="name-inputs">
+      <div class="name-row">
+        <span class="name-label">SEAT 1</span>
+        <input class="name-input" id="pname-0" type="text" placeholder="Mom" maxlength="12" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="name-row">
+        <span class="name-label">SEAT 2</span>
+        <input class="name-input" id="pname-1" type="text" placeholder="Dad" maxlength="12" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="name-row">
+        <span class="name-label">SEAT 3</span>
+        <input class="name-input" id="pname-2" type="text" placeholder="Kid" maxlength="12" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="name-row">
+        <span class="name-label">SEAT 4</span>
+        <input class="name-input" id="pname-3" type="text" placeholder="Teen" maxlength="12" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="name-row">
+        <span class="name-label">SEAT 5</span>
+        <input class="name-input" id="pname-4" type="text" placeholder="Dog" maxlength="12" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+    <div class="shop-actions">
+      <button class="menu-btn" id="btn-hit-road">► Hit the Road</button>
+      <button class="menu-btn back-btn" data-target="screen-shop">◄ Back to Shop</button>
+    </div>
+  </div>
+
+  <!-- TRAVEL SCREEN -->
+  <div class="screen hidden" id="screen-game">
+    <h2 class="screen-title">ON THE ROAD</h2>
+
+    <!-- 8-bit road scene -->
+    <div class="road-scene">
+      <div class="bg-layer"></div>
+      <div class="road-layer"></div>
+      <div class="wagon-shadow"></div>
+      <div class="wagon" id="wagon">
+        <img src="assets/images/vehicles/station-wagon.png" alt="station wagon" class="wagon-sprite">
+        <div class="exhaust" id="exhaust"></div>
+      </div>
+    </div>
+
+    <!-- Crash cutscene view (replaces road-scene during crash) -->
+    <div class="crash-scene hidden" id="crash-scene">
+      <p class="crash-scene-msg" id="crash-scene-msg"></p>
+      <button class="menu-btn crash-continue-btn" id="crash-continue">[ ► CONTINUE ]</button>
+    </div>
+
+    <!-- Traffic mini-game overlay -->
+    <div class="traffic-game hidden" id="traffic-game">
+      <canvas id="traffic-canvas"></canvas>
+      <div class="traffic-controls" id="traffic-controls">
+        <button class="traffic-control-btn" id="traffic-left-btn" aria-label="Move left">LEFT</button>
+        <button class="traffic-control-btn" id="traffic-forward-btn" aria-label="Move forward">FWD</button>
+        <button class="traffic-control-btn" id="traffic-right-btn" aria-label="Move right">RIGHT</button>
+      </div>
+    </div>
+
+    <!-- Snack Hunt mini-game overlay -->
+    <div class="snack-hunt hidden" id="snack-hunt">
+      <canvas id="snack-hunt-canvas"></canvas>
+
+      <!-- Exit — top centre, high contrast -->
+      <button class="snack-hunt-exit-btn" id="snack-hunt-exit">[ ► EXIT ]</button>
+
+      <!-- Virtual joystick — bottom left -->
+      <div class="snack-joystick" id="snack-joystick">
+        <div class="snack-joystick-nub" id="snack-joystick-nub"></div>
+      </div>
+
+      <!-- Fire button — bottom right -->
+      <button class="snack-hunt-fire-btn" id="snack-hunt-fire" aria-label="Fire">FIRE</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-row">
+        <span class="stat-label">GAS</span>
+        <div class="stat-bar-wrap">
+          <div class="stat-bar" id="bar-gas"></div>
+        </div>
+        <span class="stat-value" id="val-gas">100</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">SNACKS</span>
+        <div class="stat-bar-wrap">
+          <div class="stat-bar" id="bar-snacks"></div>
+        </div>
+        <span class="stat-value" id="val-snacks">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">MORALE</span>
+        <div class="stat-bar-wrap">
+          <div class="stat-bar" id="bar-morale"></div>
+        </div>
+        <span class="stat-value" id="val-morale">100</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">MONEY</span>
+        <div class="stat-bar-wrap"></div>
+        <span class="stat-value" id="val-money">$0</span>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-label">
+        <span>PROGRESS</span>
+        <span id="val-progress">0%</span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="bar-progress"></div>
+      </div>
+    </div>
+
+    <!-- Passenger roster -->
+    <div class="passenger-row" id="passenger-row"></div>
+
+    <!-- Event overlay -->
+    <div class="event-box hidden" id="event-box">
+      <p class="event-title">⚠ EVENT</p>
+      <p class="event-desc" id="event-desc"></p>
+      <div class="event-choices" id="event-choices"></div>
+    </div>
+
+    <p class="status-msg" id="status-msg"></p>
+  </div>
+
+  <!-- WIN SCREEN -->
+  <div class="screen hidden" id="screen-win">
+    <h2 class="screen-title" style="color: #4caf50;">YOU MADE IT!</h2>
+    <p class="screen-body">Against all odds, your family survived the trip.<br>Destination reached.</p>
+    <button class="menu-btn back-btn" data-target="screen-title">► Play Again</button>
+  </div>
+
+  <!-- LOSE SCREEN -->
+  <div class="screen hidden" id="screen-lose">
+    <h2 class="screen-title" style="color: #e74c3c;">TRIP OVER</h2>
+    <p class="screen-body" id="lose-reason">Your trip ended in disaster.</p>
+    <button class="menu-btn back-btn" data-target="screen-title">► Try Again</button>
+  </div>
+
+  <!-- HOW TO PLAY SCREEN -->
+  <div class="screen hidden" id="screen-how">
+    <h2 class="screen-title">HOW TO PLAY</h2>
+    <ul class="instructions">
+      <li>Buy supplies before the trip</li>
+      <li>Travel toward your destination</li>
+      <li>Resources go down over time</li>
+      <li>Survive random events</li>
+      <li>Reach the destination before morale or gas hits zero</li>
+    </ul>
+    <button class="menu-btn back-btn" data-target="screen-title">◄ Back to Title</button>
+  </div>
+
+  <!-- CREDITS SCREEN -->
+  <div class="screen hidden" id="screen-credits">
+    <h2 class="screen-title">CREDITS</h2>
+    <div class="credits-body">
+      <p>THE ROADTRIP FAIL</p>
+      <p>A game about surviving family road trips.</p>
+      <p>Design &amp; Development<br>Tommy McCall</p>
+      <p>Inspired by the chaos of every family vacation ever taken.</p>
+    </div>
+    <button class="menu-btn back-btn" data-target="screen-title">◄ Back to Title</button>
+  </div>
+
+  <script src="js/script.js?v=49"></script>
+</body>
+</html>

@@ -1,0 +1,886 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #0a0a0a;
+  color: #e8e8e8;
+  font-family: 'Press Start 2P', monospace, courier;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.audio-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 50;
+  background: rgba(10, 10, 10, 0.92);
+  border: 2px solid #f5c518;
+  color: #f5c518;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  letter-spacing: 1px;
+  padding: 10px 12px;
+  cursor: pointer;
+  min-width: 130px;
+}
+
+.audio-toggle:hover,
+.audio-toggle:focus {
+  background: #f5c518;
+  color: #0a0a0a;
+  outline: none;
+}
+
+.audio-toggle.is-muted {
+  border-color: #666;
+  color: #999;
+}
+
+.audio-toggle.is-muted:hover,
+.audio-toggle.is-muted:focus {
+  background: #444;
+  color: #f0f0f0;
+}
+
+.screen {
+  width: 100%;
+  max-width: 700px;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  position: relative;
+}
+
+/* Title */
+.title-box {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.game-title {
+  font-size: 2.8rem;
+  color: #f5c518;
+  text-shadow:
+    4px 4px 0px #b88a00,
+    0 0 20px #f5c51880;
+  letter-spacing: 4px;
+  line-height: 1.3;
+}
+
+.tagline {
+  font-size: 0.6rem;
+  color: #c0c0c0;
+  line-height: 2;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+.description {
+  font-size: 0.55rem;
+  color: #888;
+  line-height: 2;
+  max-width: 560px;
+  margin: 0 auto;
+  border-top: 1px solid #333;
+  padding-top: 16px;
+}
+
+/* Menu Buttons */
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.menu-btn {
+  background: transparent;
+  border: 2px solid #f5c518;
+  color: #f5c518;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.65rem;
+  padding: 14px 20px;
+  cursor: pointer;
+  text-align: left;
+  letter-spacing: 1px;
+  transition: background 0.1s, color 0.1s;
+  width: 100%;
+}
+
+.menu-btn:hover,
+.menu-btn:focus {
+  background: #f5c518;
+  color: #0a0a0a;
+  outline: none;
+}
+
+.menu-btn:active {
+  transform: translateY(2px);
+}
+
+/* Footer */
+.footer {
+  font-size: 0.5rem;
+  color: #555;
+  letter-spacing: 2px;
+}
+
+.blink {
+  animation: blink 1.2s step-start infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Screen visibility */
+.hidden {
+  display: none !important;
+}
+
+/* Secondary screen styles */
+.screen-title {
+  font-size: 0.9rem;
+  color: #f5c518;
+  letter-spacing: 3px;
+  text-align: center;
+}
+
+.screen-body {
+  font-size: 0.55rem;
+  color: #888;
+  line-height: 2.4;
+  text-align: center;
+}
+
+/* How to Play list */
+.instructions {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 500px;
+  width: 100%;
+}
+
+.instructions li {
+  font-size: 0.55rem;
+  color: #c0c0c0;
+  line-height: 2;
+  padding-left: 20px;
+  position: relative;
+}
+
+.instructions li::before {
+  content: '►';
+  position: absolute;
+  left: 0;
+  color: #f5c518;
+}
+
+/* Credits */
+.credits-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  text-align: center;
+  max-width: 440px;
+}
+
+.credits-body p {
+  font-size: 0.55rem;
+  color: #c0c0c0;
+  line-height: 2.4;
+}
+
+/* Back button */
+.back-btn {
+  max-width: 240px;
+}
+
+/* Shop */
+.money-display {
+  font-size: 0.75rem;
+  color: #f5c518;
+  letter-spacing: 2px;
+  border: 2px solid #f5c518;
+  padding: 10px 24px;
+  align-self: center;
+}
+
+.shop-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #333;
+  padding: 12px 16px;
+  gap: 16px;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.item-name {
+  font-size: 0.55rem;
+  color: #e8e8e8;
+}
+
+.item-cost {
+  font-size: 0.5rem;
+  color: #888;
+}
+
+.item-value {
+  font-size: 0.48rem;
+  color: #86d993;
+}
+
+.shop-btn {
+  background: transparent;
+  border: 2px solid #f5c518;
+  color: #f5c518;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  padding: 8px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s, color 0.1s;
+}
+
+.shop-btn:hover {
+  background: #f5c518;
+  color: #0a0a0a;
+}
+
+.shop-btn:disabled {
+  border-color: #444;
+  color: #444;
+  cursor: not-allowed;
+}
+
+.shop-btn:disabled:hover {
+  background: transparent;
+  color: #444;
+}
+
+.cart {
+  width: 100%;
+  max-width: 500px;
+  border: 1px solid #333;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cart-label {
+  font-size: 0.5rem;
+  color: #f5c518;
+  letter-spacing: 2px;
+}
+
+.cart-empty {
+  font-size: 0.5rem;
+  color: #555;
+}
+
+#cart-contents {
+  font-size: 0.5rem;
+  color: #c0c0c0;
+  line-height: 2.2;
+}
+
+.shop-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+
+/* ── Road scene ── */
+.road-scene {
+  width: 100%;
+  max-width: 500px;
+  height: 220px;
+  position: relative;
+  overflow: hidden;
+  image-rendering: pixelated;
+}
+
+/* Background layer — fills everything above the road, slow scroll.
+   source 1536×1024, layer height = scene(220) - road(80) = 140px
+   → tile width = 1536/1024 * 140 ≈ 210px */
+.bg-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 80px;
+  background-image: url('../assets/images/backgrounds/background.png');
+  background-repeat: repeat-x;
+  background-size: 250px auto;
+  background-position: 0 100%;
+  image-rendering: pixelated;
+  animation: bg-scroll 6s linear infinite;
+}
+
+@keyframes bg-scroll {
+  from { background-position: 0 100%; }
+  to   { background-position: -250px 100%; }
+}
+
+/* Road layer — 80px tall at bottom, fast scroll.
+   road.png has road strip centered in the 1536×1024 source.
+   Scale source to 400px tall so the road portion fills the 80px layer;
+   center-y pulls the road strip into view. tile width = 1536/1024*400 = 600px */
+.road-layer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background-image: url('../assets/images/backgrounds/road.png');
+  background-repeat: repeat-x;
+  background-size: 916px 80px;
+  background-position: 0 0;
+  image-rendering: pixelated;
+  animation: road-scroll 2.5s linear infinite;
+}
+
+@keyframes road-scroll {
+  from { background-position: 0 0; }
+  to   { background-position: -916px 0; }
+}
+
+/* Car shadow — handled via drop-shadow on .wagon-sprite */
+.wagon-shadow {
+  display: none;
+}
+
+/* ── Station wagon ── */
+.wagon {
+  position: absolute;
+  left: 20px;
+  bottom: 58px;
+  animation: wagon-bounce 2.6s ease-in-out infinite;
+}
+
+@keyframes wagon-bounce {
+  0%   { transform: translateY(0px)    rotate(0deg); }
+  7%   { transform: translateY(-1.5px) rotate(-0.25deg); }
+  14%  { transform: translateY(-0.5px) rotate(0.1deg); }
+  23%  { transform: translateY(-2px)   rotate(-0.2deg); }
+  31%  { transform: translateY(-1px)   rotate(0.15deg); }
+  40%  { transform: translateY(0px)    rotate(0deg); }
+  50%  { transform: translateY(-0.5px) rotate(0.1deg); }
+  59%  { transform: translateY(-2.5px) rotate(-0.3deg); }
+  67%  { transform: translateY(-1px)   rotate(0.2deg); }
+  75%  { transform: translateY(-0.5px) rotate(-0.1deg); }
+  84%  { transform: translateY(-1.5px) rotate(0.15deg); }
+  92%  { transform: translateY(-0.5px) rotate(0deg); }
+  100% { transform: translateY(0px)    rotate(0deg); }
+}
+
+.wagon-sprite {
+  display: block;
+  width: 180px;
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0px 6px 5px rgba(0, 0, 0, 0.75));
+}
+
+/* Exhaust puff — left rear of car */
+.exhaust {
+  position: absolute;
+  bottom: 30px; /* roughly wheel height from wagon bottom */
+  left: -10px;
+  width: 9px;
+  height: 9px;
+  background: rgba(180,180,180,0.7);
+  border-radius: 50%;
+  animation: puff 0.55s ease-out infinite;
+}
+
+@keyframes puff {
+  0%   { opacity: 0.8; transform: scale(1)   translateX(0); }
+  100% { opacity: 0;   transform: scale(2.8) translateX(-12px); }
+}
+
+/* Travel screen stats */
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 48px;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-label {
+  font-size: 0.45rem;
+  color: #888;
+  letter-spacing: 1px;
+  text-align: right;
+}
+
+.stat-bar-wrap {
+  height: 14px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+}
+
+.stat-bar {
+  height: 100%;
+  background: #f5c518;
+  transition: width 0.8s linear, background 0.3s;
+  width: 100%;
+}
+
+.stat-value {
+  font-size: 0.45rem;
+  color: #e8e8e8;
+  text-align: right;
+}
+
+/* Progress bar */
+.progress-section {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.45rem;
+  color: #f5c518;
+  letter-spacing: 2px;
+}
+
+.progress-bar-wrap {
+  height: 20px;
+  background: #1a1a1a;
+  border: 2px solid #f5c518;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #f5c518;
+  transition: width 0.8s linear;
+  width: 0%;
+}
+
+/* Crash cutscene — full viewport overlay */
+.crash-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background-image: url('../assets/images/backgrounds/crash-scene-bg.png');
+  background-size: cover;
+  background-position: center top;
+  image-rendering: pixelated;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 40px;
+  gap: 20px;
+}
+
+.crash-scene-msg {
+  font-size: 0.85rem;
+  color: #fff;
+  text-align: center;
+  line-height: 2;
+  max-width: 560px;
+  padding: 0 24px;
+  text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+}
+
+.crash-continue-btn {
+  /* pushed to bottom center */
+  margin-top: auto;
+  margin-bottom: 140px;
+  width: auto;
+  /* compact bubbly rectangle */
+  font-size: 0.6rem;
+  padding: 14px 32px;
+  letter-spacing: 2px;
+  color: #f5c518;
+  background: transparent;
+  border: 2px solid #f5c518;
+  border-radius: 4px;
+}
+
+/* Naming screen */
+.name-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.name-label {
+  font-size: 0.5rem;
+  color: #888;
+  letter-spacing: 2px;
+  width: 52px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.name-input {
+  flex: 1;
+  background: #111;
+  border: 1px solid #444;
+  color: #e8e8e8;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem;
+  padding: 10px 12px;
+  outline: none;
+  letter-spacing: 1px;
+}
+
+.name-input:focus {
+  border-color: #f5c518;
+}
+
+/* Passenger roster row */
+.passenger-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 500px;
+  flex-wrap: wrap;
+}
+
+.passenger-tag {
+  font-size: 0.4rem;
+  color: #e8e8e8;
+  border: 1px solid #555;
+  padding: 5px 8px;
+  letter-spacing: 1px;
+  transition: opacity 0.4s, border-color 0.4s, color 0.4s;
+}
+
+.passenger-tag.crashed {
+  color: #444;
+  border-color: #333;
+  text-decoration: line-through;
+}
+
+/* Pause road animations during events */
+.road-scene.paused .bg-layer,
+.road-scene.paused .road-layer,
+.road-scene.paused .wagon,
+.road-scene.paused .exhaust {
+  animation-play-state: paused;
+}
+
+/* Event overlay */
+.event-box {
+  width: 100%;
+  max-width: 500px;
+  border: 2px solid #f5c518;
+  background: #111;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.event-title {
+  font-size: 0.5rem;
+  color: #f5c518;
+  letter-spacing: 3px;
+  text-align: center;
+}
+
+.event-desc {
+  font-size: 0.55rem;
+  color: #e8e8e8;
+  line-height: 2.2;
+  text-align: center;
+}
+
+.event-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Traffic mini-game overlay ─────────────────────────────────────────────── */
+.traffic-game {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.traffic-controls {
+  display: none;
+}
+
+#traffic-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* ── Snack Hunt mini-game overlay ──────────────────────────────────────────── */
+.snack-hunt {
+  position: fixed;
+  inset: 0;
+  z-index: 110; /* above crash scene */
+  background-color: #000;         /* canvas draws the bg; this is fallback only */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 140px;
+}
+
+#snack-hunt-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated; /* keep pixel art crisp */
+}
+
+/* Exit button — pinned top-centre, solid black so it reads over any background */
+.snack-hunt-exit-btn {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  width: auto;
+  white-space: nowrap;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  padding: 9px 20px;
+  letter-spacing: 2px;
+  color: #f5c518;
+  background: #000;
+  border: 2px solid #f5c518;
+  border-radius: 4px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Virtual joystick — outer ring, bottom left */
+.snack-joystick {
+  position: fixed;
+  bottom: 36px;
+  left: 28px;
+  z-index: 10;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  border: 3px solid rgba(245, 197, 24, 0.7);
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Inner guide ring — shows the deadzone visually */
+.snack-joystick::before {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(245, 197, 24, 0.3);
+  pointer-events: none;
+}
+
+/* Thumb nub */
+.snack-joystick-nub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(245, 197, 24, 0.85);
+  border: 2px solid #f5c518;
+  pointer-events: none;
+}
+
+/* Fire button — bigger circle, bottom-right corner */
+.snack-hunt-fire-btn {
+  position: fixed;
+  bottom: 36px;
+  right: 28px;
+  z-index: 10;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: 3px solid #f5c518;
+  color: #f5c518;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+}
+
+.traffic-controls {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  gap: 10px;
+  align-items: center;
+}
+
+.traffic-control-btn {
+  min-width: 76px;
+  height: 54px;
+  padding: 0 12px;
+  border: 3px solid #f5c518;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #f5c518;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  letter-spacing: 1px;
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+  .audio-toggle {
+    top: 10px;
+    right: 10px;
+    font-size: 0.4rem;
+    padding: 9px 10px;
+    min-width: 112px;
+  }
+
+  .traffic-game,
+  .snack-hunt {
+    height: 100dvh;
+  }
+
+  #traffic-canvas,
+  #snack-hunt-canvas {
+    height: 100dvh;
+  }
+
+  .traffic-game.touch-active .traffic-controls {
+    display: flex;
+  }
+
+  .snack-hunt {
+    padding-bottom: 128px;
+  }
+
+  .snack-hunt-exit-btn {
+    top: 12px;
+    font-size: 0.45rem;
+    padding: 8px 16px;
+  }
+
+  .snack-joystick {
+    bottom: 28px;
+    left: 24px;
+    width: 120px;
+    height: 120px;
+  }
+
+  .snack-joystick::before {
+    inset: 15px;
+  }
+
+  .snack-joystick-nub {
+    width: 42px;
+    height: 42px;
+  }
+
+  .traffic-controls {
+    bottom: 36px;
+    gap: 18px;
+  }
+
+  .traffic-control-btn {
+    min-width: 96px;
+    height: 68px;
+    padding: 0 16px;
+    font-size: 0.44rem;
+  }
+
+  .snack-hunt-fire-btn {
+    bottom: 28px;
+    right: 24px;
+    width: 104px;
+    height: 104px;
+    font-size: 0.46rem;
+  }
+}
+
+/* Status message */
+.status-msg {
+  font-size: 0.5rem;
+  color: #e74c3c;
+  text-align: center;
+  min-height: 1.5em;
+  letter-spacing: 1px;
+  line-height: 2;
+}
